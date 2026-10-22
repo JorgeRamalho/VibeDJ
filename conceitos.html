@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conceitos: frase, harmonia e sinal | VibeDJ</title>
+  <meta name="description" content="Famílias rítmicas, mapa de BPM, roda Camelot, equalização e o caminho do sinal na cabine de DJ.">
+  <meta name="theme-color" content="#0C0D0A">
+  <meta property="og:title" content="Conceitos VibeDJ">
+  <meta property="og:description" content="Frase, Camelot, EQ e o caminho do sinal, com treinos no navegador.">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="assets/detalhe-jog.jpg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/academy.css">
+</head>
+<body data-page="conceitos">
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="logo" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36"><span>Vibe<em>DJ</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav-panel" id="nav" aria-label="Seções">
+      <a href="index.html" data-nav="inicio">Início</a>
+      <a href="trilha.html" data-nav="trilha">Trilha</a>
+      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="metodo.html" data-nav="metodo">Método</a>
+      <a href="estudio.html" data-nav="estudio">Estúdio</a>
+      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+    </nav>
+  </header>
+  <main id="conteudo">
+    <div class="wrap page-intro">
+      <p class="eyebrow">Conceitos</p>
+      <h1>A teoria que a mão consegue usar.</h1>
+      <p class="lede">Nada aqui é um catálogo fechado de gêneros. São ferramentas de escuta. Os intervalos de BPM são faixas de prática, não leis.</p>
+    </div>
+    <div class="wrap prose">
+      <h2>Famílias de pulso</h2>
+      <p>Há dois chãos. No <strong>four-on-the-floor</strong> o kick cai em todos os tempos: house, techno, trance, afro house. No <strong>break</strong> o kick não ocupa todos os tempos e o snare responde no 2 e no 4: drum and bass, breaks, muito do UK garage. Misturar as duas famílias no mesmo gesto de beatmatch exige um salto grande de pitch — em geral, mais de 30%. Trate como outra língua, não como a faixa seguinte.</p>
+      <table>
+        <caption>Mapa de prática. Os BPMs são zonas comuns de pista, não fronteiras.</caption>
+        <thead>
+          <tr><th>Família</th><th>Pulso</th><th>Zona de BPM</th><th>O que segura</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>House</td><td>4/4 no chão</td><td>118–128</td><td>Baixo e hat no contratempo</td></tr>
+          <tr><td>Techno</td><td>4/4 no chão</td><td>126–140</td><td>Kick longo, hat contínuo, pouca voz</td></tr>
+          <tr><td>Trance</td><td>4/4</td><td>136–142</td><td>Quebra longa e o retorno</td></tr>
+          <tr><td>Afro house</td><td>4/4 com percussão</td><td>118–124</td><td>Espaço e percussão deslocada</td></tr>
+          <tr><td>Drum and bass</td><td>Break</td><td>170–176</td><td>Snare no 2 e no 4, baixo que anda</td></tr>
+          <tr><td>Breaks</td><td>Break</td><td>125–140</td><td>Bateria recortada</td></tr>
+        </tbody>
+      </table>
+      <h2>Anatomia da faixa</h2>
+      <p>Intro é a zona em que a outra faixa ainda pode existir. Base é o corpo. Quebra tira o chão para a volta pesar. Drop é essa volta. Outro é a intro ao contrário: devolve espaço. DJ mistura intro com outro, ou usa um loop de 4 ou 8 tempos quando a faixa não oferece esse espaço. Loop não é enfeite. É uma frase que você segura até a outra estar pronta.</p>
+      <h2 id="treinador">Contar a frase</h2>
+      <p>O clique abaixo é um metrônomo de 8 compassos. Os compassos 7 e 8 ficam marcados: é a janela em que a faixa que chega deve estar no ponto, para o downbeat seguinte coincidir.</p>
+      <div id="phrase-app"></div>
+      <h2 id="camelot">Roda Camelot</h2>
+      <p>Toque um código. O aceso é o tom. Os de cobre são os vizinhos com os quais a sobreposição costuma ser pacífica. Energia continua na frente: uma faixa compatível e morta não salva uma pista.</p>
+      <div id="camelot-app"></div>
+      <h2>Equalização de cabine</h2>
+      <p>O EQ do mixer não é o de um estúdio. Ele existe para duas faixas dividirem o ar. O gesto central é tirar, não acrescentar. Kill no grave significa “este baixo saiu”. O médio em excesso cansa o ouvido antes do grave. O agudo em excesso vira chiado de hat contra hat.</p>
+      <table>
+        <caption>Onde cada papel costuma viver. Use como ouvido, não como número sagrado.</caption>
+        <thead>
+          <tr><th>Região</th><th>Zona aproximada</th><th>Na pista</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Corpo do kick</td><td>40–80 Hz</td><td>Peso no peito</td></tr>
+          <tr><td>Grave do baixo</td><td>80–180 Hz</td><td>Briga direta com o kick</td></tr>
+          <tr><td>Médio baixo</td><td>200–500 Hz</td><td>Lama, caixa de sala</td></tr>
+          <tr><td>Presença</td><td>800 Hz–2 kHz</td><td>Voz, clap, ataque</td></tr>
+          <tr><td>Ar</td><td>6–12 kHz</td><td>Hat, brilho, fadiga</td></tr>
+        </tbody>
+      </table>
+      <h2>Caminho do sinal</h2>
+      <p>Se o som está alto e sujo, o problema quase nunca é “mais master”. É ganho acumulado. O trim deixa a faixa num tamanho parecido com a outra antes do fader subir. Os dois faders no topo, com trim quente, estouram o limiter da casa e a pista sente o kick murcho — o oposto do que o medidor vermelho promete.</p>
+      <ol class="signal">
+        <li>Player</li>
+        <li>Trim</li>
+        <li>EQ e filtro</li>
+        <li>Cue do fone, antes do fader</li>
+        <li>Fader de canal</li>
+        <li>Crossfader</li>
+        <li>Master, rumo à sala</li>
+      </ol>
+      <p>O booth é outra saída, para quem está na cabine ouvir sem alterar o salão. Neste simulador há uma saída só no navegador: o knob CUE/MASTER mistura a pré-escuta com o master nessa saída. Numa cabine real, o fone faz isso e o master segue intocado.</p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap"><small>VibeDJ · conceitos. Pratique no <a href="simulador.html">simulador</a>.</small></div>
+  </footer>
+  <script type="module" src="js/nav.js"></script>
+  <script type="module" src="js/widgets.js"></script>
+</body>
+</html>

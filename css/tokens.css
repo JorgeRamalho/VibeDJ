@@ -1,0 +1,28 @@
+:root {
+  --bg: #0c0d0a;
+  --bg-elev: #14160f;
+  --bg-elev-2: #1c1f16;
+  --metal-top: #2c3126;
+  --metal-bottom: #12140e;
+  --screen: #070806;
+  --line: rgba(232, 226, 212, 0.14);
+  --line-strong: rgba(232, 226, 212, 0.28);
+  --text: #e8e2d4;
+  --muted: #c8c2b4;
+  --faint: #8f8a7e;
+  --acid: #e4ff57;
+  --acid-ink: #16190a;
+  --ember: #ff6a3d;
+  --ember-ink: #2a120c;
+  --copper: #d7b08a;
+  --sea: #7ed0c4;
+  --danger: #ff8b7a;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+  --sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  --display: "Syne", "Arial Black", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --measure: 66ch;
+  --header: 76px;
+  --radius: 18px;
+  color-scheme: dark;
+}

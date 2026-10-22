@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de CDJ e mixer | VibeDJ</title>
+  <meta name="description" content="Simulador de dois players e mixer para estudar beatmatch, cue, pitch, loop, EQ e pré-escuta. Áudio original sintetizado no navegador.">
+  <meta name="theme-color" content="#0C0D0A">
+  <meta property="og:title" content="Simulador VibeDJ">
+  <meta property="og:description" content="Agulha V1 e Cabine M2: a cabine de estudo da academia.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="assets/detalhe-jog.jpg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/academy.css">
+  <link rel="stylesheet" href="css/simulator.css">
+</head>
+<body class="page-sim" data-page="simulador">
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="logo" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36"><span>Vibe<em>DJ</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav-panel" id="nav" aria-label="Seções">
+      <a href="index.html" data-nav="inicio">Início</a>
+      <a href="trilha.html" data-nav="trilha">Trilha</a>
+      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="metodo.html" data-nav="metodo">Método</a>
+      <a href="estudio.html" data-nav="estudio">Estúdio</a>
+      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+    </nav>
+  </header>
+  <main id="conteudo">
+    <div class="wrap sim-intro">
+      <p class="eyebrow">Agulha V1 · Cabine M2</p>
+      <h1>A cabine, com cada gesto nomeado.</h1>
+      <p class="lede">Dois players e um mixer. O par de estudo é Quarto Escuro, a 122, e Sal de Pista, a 124 — mesmo tom, tempos diferentes. Comece com o fone baixo.</p>
+      <div class="sim-tools">
+        <label><input id="ear" type="checkbox"> Treino de ouvido: esconder o BPM</label>
+        <label><input id="hide-pitch" type="checkbox"> Esconder o pitch numérico</label>
+        <button class="btn btn--ghost" id="reset-match" type="button">Zerar tentativa de beatmatch</button>
+      </div>
+      <ol class="missions">
+        <li data-mission="load"><strong>1 · Crate</strong> Carregue uma faixa em cada deck. Use o par de estudo.</li>
+        <li data-mission="transport"><strong>2 · Cue</strong> Dê play no A e volte ao ponto com CUE.</li>
+        <li data-mission="match"><strong>3 · Tempo</strong> Alinhe BPM e fase sem sync, por mais de um segundo.</li>
+        <li data-mission="swap"><strong>4 · Grave</strong> Com os dois faders abertos, deixe um só baixo.</li>
+        <li data-mission="loop"><strong>5 · Loop</strong> Segure quatro tempos com o botão 4.</li>
+      </ol>
+      <p id="mission-note"></p>
+    </div>
+    <div class="wrap booth-wrap">
+      <div class="power-gate">
+        <button class="btn btn--acid" id="power" type="button">Ligar o sistema</button>
+        <p>O navegador só toca depois deste gesto. O kick é seco: deixe o master perto da metade.</p>
+      </div>
+      <p class="booth-status" id="booth-status">A parado · B parado</p>
+      <div class="panel-switch" role="tablist" aria-label="Painel da cabine">
+        <button type="button" role="tab" data-panel="a" aria-selected="true">Deck A</button>
+        <button type="button" role="tab" data-panel="mix" aria-selected="false">Mixer</button>
+        <button type="button" role="tab" data-panel="b" aria-selected="false">Deck B</button>
+      </div>
+      <p id="cue-hint">O deck B já está no cue. Gire CUE/MASTER no mixer para ouvir a pré-escuta nesta saída única.</p>
+      <div class="booth" id="booth" data-panel="a">
+        <div id="slot-a"></div>
+        <section class="mixer" aria-label="Mixer Cabine M2">
+          <header class="mixer__head">
+            <h2>Cabine M2</h2>
+            <p>Centro</p>
+          </header>
+          <div class="mixer__grid">
+            <div class="chan" data-channel="a">
+              <h3>A</h3>
+              <label>TRIM <b data-read="trim"></b><input type="range" min="0" max="1" step="0.01" value="0.75" data-param="trim" aria-label="Trim do canal A"></label>
+              <label>HI <b data-read="hi"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="hi" aria-label="Agudo do canal A"></label>
+              <label>MID <b data-read="mid"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="mid" aria-label="Médio do canal A"></label>
+              <label>LOW <b data-read="low"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="low" aria-label="Grave do canal A"></label>
+              <label>FILTRO <b data-read="filter"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="filter" aria-label="Filtro do canal A"></label>
+              <button class="cue-btn" type="button" data-param="cue" aria-pressed="false">CUE</button>
+              <label class="fader-label">FADER <b data-read="fader"></b><input type="range" min="0" max="1" step="0.01" value="0.85" data-param="fader" aria-label="Fader do canal A"></label>
+              <div class="meter" data-meter="a" aria-hidden="true"><span></span></div>
+            </div>
+            <div class="mixer__center">
+              <div class="meter meter--master" data-meter="master" aria-hidden="true"><span></span></div>
+              <label>MASTER <b data-read="master"></b><input type="range" min="0" max="1" step="0.01" value="0.55" data-param="master" aria-label="Volume master"></label>
+              <label>BOOTH <b data-read="booth"></b><input type="range" min="0" max="1" step="0.01" value="0.7" data-param="booth" aria-label="Nível de booth, só no medidor"></label>
+              <label>FONE <b data-read="phones"></b><input type="range" min="0" max="1" step="0.01" value="0.8" data-param="phones" aria-label="Nível da pré-escuta"></label>
+              <label>CUE / MASTER <b data-read="cueMix"></b><input type="range" min="0" max="1" step="0.01" value="0" data-param="cueMix" aria-label="Mistura entre sala e pré-escuta"></label>
+              <div class="ranges">
+                <button type="button" data-curve="smooth" aria-pressed="true">SUAVE</button>
+                <button type="button" data-curve="linear" aria-pressed="false">LINEAR</button>
+                <button type="button" data-curve="cut" aria-pressed="false">CORTE</button>
+              </div>
+            </div>
+            <div class="chan" data-channel="b">
+              <h3>B</h3>
+              <label>TRIM <b data-read="trim"></b><input type="range" min="0" max="1" step="0.01" value="0.75" data-param="trim" aria-label="Trim do canal B"></label>
+              <label>HI <b data-read="hi"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="hi" aria-label="Agudo do canal B"></label>
+              <label>MID <b data-read="mid"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="mid" aria-label="Médio do canal B"></label>
+              <label>LOW <b data-read="low"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="low" aria-label="Grave do canal B"></label>
+              <label>FILTRO <b data-read="filter"></b><input type="range" min="0" max="1" step="0.01" value="0.5" data-param="filter" aria-label="Filtro do canal B"></label>
+              <button class="cue-btn" type="button" data-param="cue" aria-pressed="true">CUE</button>
+              <label class="fader-label">FADER <b data-read="fader"></b><input type="range" min="0" max="1" step="0.01" value="0" data-param="fader" aria-label="Fader do canal B"></label>
+              <div class="meter" data-meter="b" aria-hidden="true"><span></span></div>
+            </div>
+          </div>
+          <label class="cross">CROSSFADER <b data-read="cross"></b>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" data-param="cross" aria-label="Crossfader">
+          </label>
+          <p class="mixer__note">O booth mede a saída antes do volume da sala. O som que você ouve segue o master, misturado à pré-escuta quando algum CUE está aceso.</p>
+        </section>
+        <div id="slot-b"></div>
+      </div>
+      <p class="sr-only" id="live" aria-live="polite"></p>
+    </div>
+
+    <template id="deck-template">
+      <section class="deck">
+        <div class="deck__head">
+          <h2 data-bind="heading">Deck</h2>
+          <span class="deck__model">Agulha V1</span>
+          <span class="led" data-bind="beat-led" aria-hidden="true"></span>
+        </div>
+        <div class="screen">
+          <div class="screen__row">
+            <p class="bpm"><span data-bind="bpm">000.0</span><small>BPM</small></p>
+            <p class="pitch-read" data-bind="pitch">0.00%</p>
+          </div>
+          <p class="screen__titles"><span data-bind="title">Nenhuma faixa</span><span data-bind="artist"></span></p>
+          <canvas class="wave wave--overview" data-bind="overview" aria-label="Forma de onda inteira. Arraste para buscar."></canvas>
+          <canvas class="wave wave--zoom" data-bind="zoom" aria-hidden="true"></canvas>
+          <div class="screen__row screen__meta">
+            <button type="button" data-action="time-mode" aria-label="Alternar tempo restante e decorrido"><span data-bind="time-label">RESTA</span> <span data-bind="time">--:--</span></button>
+            <span data-bind="key">—</span>
+            <span data-bind="phrase">–. –</span>
+            <span data-bind="section">—</span>
+          </div>
+          <p class="blurb" data-bind="blurb"></p>
+        </div>
+        <div class="crate" data-bind="crate" role="list"></div>
+        <div class="hotcues" data-bind="hotcues"></div>
+        <div class="loopbar">
+          <button type="button" data-action="loop-in" aria-label="Marcar início do loop">IN</button>
+          <button type="button" data-action="loop-out" aria-label="Marcar fim do loop">OUT</button>
+          <button type="button" data-action="reloop" aria-label="Sair ou voltar ao loop">RELOOP</button>
+          <button type="button" data-action="loop-4" aria-label="Loop automático de quatro tempos">4</button>
+          <button type="button" data-action="loop-half" aria-label="Cortar o loop pela metade">1/2</button>
+          <button type="button" data-action="loop-double" aria-label="Dobrar o loop">x2</button>
+        </div>
+        <div class="deck__body">
+          <div class="pitch">
+            <span aria-hidden="true">−</span>
+            <div class="pitch__track" data-action="pitch" tabindex="0" role="slider" aria-orientation="vertical" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0" aria-label="Pitch. Para baixo acelera.">
+              <i class="pitch__cap" data-bind="pitch-cap"></i>
+              <i class="pitch__zero"></i>
+            </div>
+            <span aria-hidden="true">+</span>
+          </div>
+          <div class="transport">
+            <div class="ranges" data-bind="ranges"></div>
+            <div class="transport__main">
+              <button class="btn-cue" type="button" data-action="cue">CUE</button>
+              <button class="btn-play" type="button" data-action="play">PLAY</button>
+            </div>
+            <div class="toggles">
+              <button type="button" data-action="sync">SYNC</button>
+              <button type="button" data-action="master" aria-pressed="false">MASTER</button>
+              <button type="button" data-action="shift" aria-pressed="false">SHIFT</button>
+              <button type="button" data-action="vinyl" aria-pressed="true">VINIL</button>
+              <button type="button" data-action="quantize" aria-pressed="true">QUANT.</button>
+              <button type="button" data-action="slip" aria-pressed="false">SLIP</button>
+              <button type="button" data-action="mt" aria-pressed="true">MT</button>
+              <button type="button" data-action="pitch-reset">0</button>
+            </div>
+            <div class="jumps">
+              <button type="button" data-action="search-back" aria-label="Busca, um tempo para trás">◀◀</button>
+              <button type="button" data-action="jump-back" aria-label="Pulo para trás">◀</button>
+              <button type="button" data-action="jump-size" aria-label="Tamanho do pulo em tempos">4</button>
+              <button type="button" data-action="jump-fwd" aria-label="Pulo para a frente">▶</button>
+              <button type="button" data-action="search-fwd" aria-label="Busca, um tempo para a frente">▶▶</button>
+            </div>
+            <div class="keyshift">
+              <button type="button" data-action="key-down" aria-label="Descer um semitom">♭</button>
+              <span data-bind="keyshift">0</span>
+              <button type="button" data-action="key-up" aria-label="Subir um semitom">♯</button>
+              <button type="button" data-action="mem">MEM</button>
+              <button type="button" data-action="call">CALL</button>
+            </div>
+          </div>
+          <div class="jog" data-action="jog" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-label="Jog. O centro arranha no modo vinil. A borda faz pitch bend.">
+            <div class="jog__platter" data-bind="platter"></div>
+            <div class="jog__hub"></div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <section class="wrap map">
+      <h2>Mapa de cada mecanismo</h2>
+      <p class="lede">O mesmo gesto, com o nome que a cabine usa. Teclas: Z e N dão play nos decks A e B. X e M seguram o cue. C e K chamam o sync.</p>
+      <details open>
+        <summary>Player — tela, tempo e jog</summary>
+        <dl>
+          <dt>BPM</dt>
+          <dd>Velocidade efetiva: o BPM da faixa vezes o pitch. O treino de ouvido esconde o número dos olhos e mantém o valor para leitor de tela.</dd>
+          <dt>Pitch %</dt>
+          <dd>Quanto o fader de tempo afastou a faixa do BPM original. 0% é o centro, com um detente.</dd>
+          <dt>Fader de pitch</dt>
+          <dd>Para baixo acelera, para cima desacelera. É o contrário de um fader de volume, e é de propósito: a cabine profissional funciona assim. Duplo clique ou o botão 0 devolve o centro. As faixas ±6, ±10, ±16 e WIDE mudam o tamanho do gesto, não a música por si.</dd>
+          <dt>MT · master tempo</dt>
+          <dd>Ligado, mudar o tempo não desafina baixo e acorde. Desligado, o pitch arrasta o tom junto — é o que um player faz quando reproduz o arquivo mais rápido. O kick quase não sobe, para continuar parecendo kick.</dd>
+          <dt>♭ / ♯</dt>
+          <dd>Desloca o tom em semitons sem mexer no BPM. Não é a roda Camelot: um semitom nem sempre é o vizinho harmônico.</dd>
+          <dt>Jog</dt>
+          <dd>Centro, com VINIL aceso: a mão arrasta a posição, como um prato. Borda: empurra o tempo só enquanto o dedo anda e devolve. Com VINIL apagado, qualquer ponto do jog só faz esse bend. Setas do teclado, com o jog em foco, pulam um tempo; com Shift, um quarto de tempo.</dd>
+          <dt>Forma de onda</dt>
+          <dd>Brasa é grave, lima é médio, mar é agudo. A faixa de cima é a música inteira: Intro, Base, Quebra, Drop. Clicar nela busca. A de baixo é a lupa, com a agulha no centro.</dd>
+          <dt>RESTA / TOCOU</dt>
+          <dd>Tempo que falta ou tempo que já passou, no andamento atual. A frase ao lado (1.1, 7.4) é outra coisa: compasso dentro do bloco de 8, e o tempo dentro do compasso.</dd>
+        </dl>
+      </details>
+      <details>
+        <summary>Player — transporte, cue e loop</summary>
+        <dl>
+          <dt>PLAY</dt>
+          <dd>Começa ou pausa do ponto em que a agulha está. Sem faixa na crate, não há o que tocar.</dd>
+          <dt>CUE</dt>
+          <dd>Durante o play, volta ao ponto de cue e pausa. Com a faixa parada, segure para ouvir a partir do cue; soltar devolve ao ponto. Com SHIFT, marca um cue novo no tempo quantizado.</dd>
+          <dt>Hot cues 1–8</dt>
+          <dd>Vazio: grava o ponto. Cheio: pula para lá e toca. Com SHIFT, apaga. São marcadores de frase, não decoração.</dd>
+          <dt>MEM e CALL</dt>
+          <dd>SHIFT + MEM guarda um memory cue. MEM sem shift volta ao último. CALL percorre a lista.</dd>
+          <dt>IN, OUT, RELOOP, 4, 1/2, x2</dt>
+          <dd>IN marca o começo, OUT fecha o loop. 4 cria na hora um loop de quatro tempos a partir do beat quantizado. 1/2 e x2 encolhem ou dobram. RELOOP sai; se SLIP estiver aceso, a saída cai onde a faixa estaria se o loop não tivesse segurado o tempo. Apertar de novo reentra no último loop.</dd>
+          <dt>QUANT.</dt>
+          <dd>Cues, loops e a busca na onda inteira grudam no tempo, não no meio do kick.</dd>
+          <dt>SYNC e MASTER</dt>
+          <dd>SYNC iguala BPM e fase ao outro deck, ou ao deck marcado como MASTER. A missão de beatmatch não completa se o sync entrou. Zerar a tentativa devolve o pitch do B e apaga essa marca.</dd>
+          <dt>Pulos e busca</dt>
+          <dd>As setas externas andam um tempo. As internas pulam 1, 2, 4, 8 ou 16 tempos — o botão do meio troca o tamanho. Serve para cair no downbeat de outra frase sem arrastar o jog.</dd>
+          <dt>Crate</dt>
+          <dd>Seis faixas originais da Oficina Vibe. O par de estudo está marcado. Trocar de faixa zera cues e pitch daquele deck.</dd>
+        </dl>
+      </details>
+      <details>
+        <summary>Mixer — ganho, EQ, fader e fone</summary>
+        <dl>
+          <dt>TRIM</dt>
+          <dd>Tamanho da faixa antes do fader. O zero de estudo fica perto de 0 dB. Dois trims quentes com faders abertos estouram o master mesmo com a música “boa”.</dd>
+          <dt>HI, MID, LOW</dt>
+          <dd>O centro é neutro. O fim de baixo é kill, cerca de −40 dB. O topo soma pouco, até +6 dB. A troca de grave usa o LOW, não o master.</dd>
+          <dt>FILTRO</dt>
+          <dd>No centro, aberto. À esquerda, passa-baixa: o agudo sai. À direita, passa-alta: o grave sai. É a transição quando não há outro nem intro.</dd>
+          <dt>CUE</dt>
+          <dd>Pré-escuta de antes do fader. O canal B já começa aceso para você ouvir a faixa que chega com o fader dela ainda embaixo — o gesto clássico de quem prepara a próxima.</dd>
+          <dt>FADER</dt>
+          <dd>O que a sala recebe daquele canal, depois do EQ. House de abertura costuma morar aqui, com o crossfader parado no meio.</dd>
+          <dt>CROSSFADER e curva</dt>
+          <dd>No centro os dois canais passam. Suave abre o lado que chega com curva contínua. Linear é direta. Corte fica mudo até perto do centro — útil para um corte seco, não para um blend de 16 compassos.</dd>
+          <dt>MASTER, BOOTH, FONE, CUE/MASTER</dt>
+          <dd>Master é o volume desta página. Booth só move o medidor do centro, para você ver uma saída de cabine que, na vida real, não altera o salão. Fone é o tamanho da pré-escuta. CUE/MASTER, em SALA, toca o master; em FONE, toca só o que está em cue; no meio, mistura os dois. Há uma saída no navegador. Numa cabine, o fone e o salão são caminhos separados.</dd>
+          <dt>Medidores</dt>
+          <dd>São medidores de estudo, não dBFS calibrado de mesa de PA. O vermelho no topo avisa excesso. Se acender cedo, baixe o trim antes de baixar o master.</dd>
+        </dl>
+      </details>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap">
+      <small>VibeDJ · simulador de estudo. Faixas sintetizadas na Oficina Vibe. Não substitui uma cabine real nem um soundcheck.</small>
+    </div>
+  </footer>
+  <noscript><p class="wrap">O simulador precisa de JavaScript para gerar o áudio. O mapa dos controles acima continua legível.</p></noscript>
+  <script type="module" src="js/nav.js"></script>
+  <script type="module" src="js/simulator.js"></script>
+</body>
+</html>

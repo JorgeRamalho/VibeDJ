@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estúdio: marca, tipo e interface | VibeDJ</title>
+  <meta name="description" content="Como a VibeDJ foi desenhada: símbolo, cor com função, tipografia de cabine e a lógica da interface do simulador.">
+  <meta name="theme-color" content="#0C0D0A">
+  <meta property="og:title" content="Estúdio VibeDJ">
+  <meta property="og:description" content="Identidade visual e decisões de interface da academia.">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="assets/logo-mark.jpg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/academy.css">
+</head>
+<body data-page="estudio">
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="logo" href="index.html"><img src="assets/logo.svg" alt="" width="36" height="36"><span>Vibe<em>DJ</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav-panel" id="nav" aria-label="Seções">
+      <a href="index.html" data-nav="inicio">Início</a>
+      <a href="trilha.html" data-nav="trilha">Trilha</a>
+      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="metodo.html" data-nav="metodo">Método</a>
+      <a href="estudio.html" data-nav="estudio">Estúdio</a>
+      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+    </nav>
+  </header>
+  <main id="conteudo">
+    <div class="wrap page-intro">
+      <p class="eyebrow">Estúdio</p>
+      <h1>A marca é uma agulha, não um letreiro.</h1>
+      <p class="lede">Vibe é a energia que a sala devolve. DJ é o ofício. O símbolo junta os dois pratos e uma agulha lima — a única cor que corta o escuro, porque o ouvido também é um ponto só.</p>
+    </div>
+    <div class="wrap figure-row">
+      <figure>
+        <img src="assets/logo-mark.jpg" width="1024" height="1024" alt="Símbolo VibeDJ: dois círculos de marfim e uma agulha lima sobre fundo oliva escuro.">
+        <figcaption>Marca. Dois pratos, uma agulha. Sem palavra dentro do símbolo, para ele caber no favicon e na cabine.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/detalhe-jog.jpg" width="1200" height="900" alt="Detalhe de um jog circular escuro com aro iluminado por luz lima.">
+        <figcaption>O jog da interface repete esse aro: o centro arranha, a borda só empurra o tempo.</figcaption>
+      </figure>
+    </div>
+    <div class="wrap prose">
+      <h2>Cor com função</h2>
+      <p>Cada cor faz um trabalho. Se tudo brilha, nada é sinal. O fundo é a sala apagada. O marfim é texto. A lima é a agulha: playhead, BPM, ação principal. A brasa é o cue, como na memória muscular de quem já viu uma cabine. O cobre é calor humano — notas, avisos, o que não é alarme. O verde-água é o agudo da forma de onda.</p>
+      <ul class="swatches">
+        <li><i class="swatch swatch--bg"></i><div><code>#0C0D0A</code><p>Cabine. O fundo não compete com o display.</p></div></li>
+        <li><i class="swatch swatch--text"></i><div><code>#E8E2D4</code><p>Marfim. Texto longo, menos frio que o branco puro.</p></div></li>
+        <li><i class="swatch swatch--acid"></i><div><code>#E4FF57</code><p>Lima. Um acento só: agulha, BPM, botão que importa.</p></div></li>
+        <li><i class="swatch swatch--ember"></i><div><code>#FF6A3D</code><p>Brasa. Cue e a faixa grave da forma de onda.</p></div></li>
+        <li><i class="swatch swatch--copper"></i><div><code>#D7B08A</code><p>Cobre. Aviso e tom de voz, sem parecer erro.</p></div></li>
+        <li><i class="swatch swatch--sea"></i><div><code>#7ED0C4</code><p>Mar. Agudos do waveform, para o olho separar as bandas.</p></div></li>
+      </ul>
+      <h2>Três famílias de tipo</h2>
+      <p class="specimen specimen--display">Syne fala como a sala.</p>
+      <p class="specimen specimen--body">Outfit lê o estudo. A medida do texto fica em torno de 66 caracteres, para a frase musical e a frase escrita terem fôlego parecido.</p>
+      <p class="specimen specimen--mono">124.0 BPM</p>
+      <p>IBM Plex Mono é o display do player. Número de instrumento, não de anúncio. O BPM grande existe para ser lido de pé, como numa cabine.</p>
+      <h2>Interface que sugere o gesto</h2>
+      <p>No celular, a cabine não esmaga os dois decks e o mixer num único scroll impossível. Você escolhe Deck A, mixer ou Deck B, e uma linha fixa diz se o outro lado está tocando. No desktop, a geometria é a da noite: player, mixer, player.</p>
+      <p>Cada controle tem rótulo de palavra — PLAY, CUE, TRIM — porque é assim que se conversa na cabine. Os sinais com emoji ficam no método, como âncora de memória do estudo, e não em cima do jog. Emoji no equipamento viraria ruído.</p>
+      <p>Os players se chamam Agulha V1 e o mixer, Cabine M2. O layout segue a lógica profissional, com nomes desta academia. Não é réplica de um fabricante.</p>
+      <h2>Como o site está armado</h2>
+      <p>HTML guarda o texto, para a leitura e a busca enxergarem a trilha mesmo antes do JavaScript. CSS desenha. O áudio nasce no navegador, com Web Audio, a partir de padrões originais — house, techno, afro house, melodic techno e drum and bass. Não há faixa protegida por direito de terceiros dentro do simulador.</p>
+      <p>Uma página, um assunto: início, trilha, conceitos, método, estúdio, simulador. Título e descrição próprios em cada uma. O simulador pede um gesto — ligar o sistema — porque o navegador só libera som depois de uma ação sua, e porque volume alto de kick não é boa-vinda.</p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap"><small>VibeDJ · estúdio da marca. A cabine está no <a href="simulador.html">simulador</a>.</small></div>
+  </footer>
+  <script type="module" src="js/nav.js"></script>
+</body>
+</html>

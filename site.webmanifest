@@ -1,0 +1,13 @@
+{
+  "name": "VibeDJ Academia",
+  "short_name": "VibeDJ",
+  "description": "Academia de música eletrônica e simulador de cabine.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0C0D0A",
+  "theme_color": "#0C0D0A",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "assets/logo-mark.jpg", "sizes": "1024x1024", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
