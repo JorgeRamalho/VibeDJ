@@ -15,13 +15,13 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/logo-mark.jpg">
-  <link rel="manifest" href="site.webmanifest">
+  <link rel="manifest" href="meta/site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/academy.css">
+  <link rel="stylesheet" href="css/academy.css?v=14">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -44,30 +44,63 @@
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <nav class="nav-panel" id="nav" aria-label="Seções">
       <a href="index.html" data-nav="inicio">Início</a>
-      <a href="trilha.html" data-nav="trilha">Trilha</a>
-      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
-      <a href="metodo.html" data-nav="metodo">Método</a>
-      <a href="estudio.html" data-nav="estudio">Estúdio</a>
-      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+      <a href="pages/trilha.html" data-nav="trilha">Trilha</a>
+      <a href="pages/sala.html" data-nav="sala">Sala</a>
+      <a href="pages/conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="pages/metodo.html" data-nav="metodo">Método</a>
+      <a href="pages/estudio.html" data-nav="estudio">Estúdio</a>
+      <a class="nav-cta" href="pages/simulador.html" data-nav="simulador">Simulador</a>
     </nav>
   </header>
   <main id="conteudo">
     <div class="wrap hero">
-      <div>
+      <div class="hero__copy">
         <p class="eyebrow">Academia de música eletrônica</p>
-        <h1>Do primeiro kick ao domínio da pista.</h1>
+        <h1>Do kick à pista.</h1>
         <hr class="rule">
         <p class="lede">VibeDJ é uma cabine de estudo. Você aprende a escutar a frase, a mover o grave na hora certa e a desenhar a energia de um set — do quarto até a noite em que a pista fica com você.</p>
         <div class="hero-actions">
-          <a class="btn btn--acid" href="trilha.html">Começar pela trilha</a>
-          <a class="btn btn--ghost" href="simulador.html">Abrir o simulador</a>
+          <a class="btn btn--acid" href="pages/trilha.html">Começar pela trilha</a>
+          <a class="btn btn--ghost" href="pages/simulador.html">Abrir o simulador</a>
         </div>
       </div>
-      <figure class="hero-figure">
-        <img src="assets/hero-cabine.jpg" width="1600" height="900" alt="Cabine escura vazia, com um fio de luz lima sobre dois players e um mixer sem marca.">
-        <figcaption>A cabine é um instrumento de escuta, não um altar de botões.</figcaption>
+      <figure class="hero-view">
+        <img src="assets/hero-perspectiva.jpg" width="960" height="1280" alt="Cabine em perspectiva, com dois players e um mixer sem marca, sob um facho de luz lima.">
       </figure>
     </div>
+    <section class="wrap reel" data-reel aria-roledescription="carrossel" aria-label="Cenas da pista e do estudo">
+      <div class="reel__frame">
+        <div class="reel__track">
+          <figure class="reel__slide">
+            <img src="assets/cena-dj.jpg?v=2" width="1280" height="720" alt="DJ de costas na cabine, de fone, com as mãos no mixer, e pessoas sorrindo e dançando atrás sob um facho lima.">
+            <figcaption><span>Cabine</span><p>A mão no jog, o ouvido no fone.</p></figcaption>
+          </figure>
+          <figure class="reel__slide" aria-hidden="true" inert>
+            <img src="assets/cena-pista.jpg?v=2" width="1280" height="720" alt="DJ de fone na cabine, mãos no mixer, com a pista dançando atrás sob um facho lima.">
+            <figcaption><span>Pista</span><p>A noite devolve o que o set propõe.</p></figcaption>
+          </figure>
+          <figure class="reel__slide" aria-hidden="true" inert>
+            <img src="assets/cena-estudo.jpg" width="1280" height="720" alt="Aluno de fone estudando à noite, com um controlador pequeno, dois notebooks e um caderno em branco.">
+            <figcaption><span>Estudo</span><p>O quarto também é cabine.</p></figcaption>
+          </figure>
+          <figure class="reel__slide" aria-hidden="true" inert>
+            <img src="assets/cena-confraternizacao.jpg" width="1280" height="720" alt="Amigos rindo juntos ao lado da cabine, copos na mão, luz lima ao fundo.">
+            <figcaption><span>Depois</span><p>A pista ainda conversa quando o último kick acaba.</p></figcaption>
+          </figure>
+        </div>
+        <div class="reel__progress" aria-hidden="true"><span></span></div>
+        <button type="button" class="reel__nav reel__nav--prev" data-reel="prev" aria-label="Cena anterior">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 6 L8 12 L14 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="reel__nav reel__nav--next" data-reel="next" aria-label="Próxima cena">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M10 6 L16 12 L10 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="reel__bar">
+        <div class="reel__dots" role="group" aria-label="Escolher cena"></div>
+      </div>
+      <p class="sr-only" data-reel-status aria-live="polite"></p>
+    </section>
     <div class="marquee" aria-hidden="true">
       <div class="marquee__track">
         <span>Ouvido</span><span>Frase</span><span>Tom</span><span>Ganho</span><span>Grave</span><span>Transição</span><span>Energia</span><span>Pista</span>
@@ -105,7 +138,7 @@
           <li><span>T</span> Técnica. Cue, pitch, EQ, fader.</li>
           <li><span>A</span> Adaptação. O que a pista devolve.</li>
         </ol>
-        <p><a href="metodo.html">Ver a sessão de 45 minutos</a></p>
+        <p><a href="pages/metodo.html">Ver a sessão de 45 minutos</a></p>
       </div>
     </section>
     <section class="section">
@@ -113,14 +146,15 @@
         <p class="eyebrow">Trilha</p>
         <h2>Sete estações, uma de cada vez.</h2>
         <ol class="path">
-          <li><a href="trilha.html#ouvido"><b>01</b> Ouvido de cabine <span>Iniciante</span></a></li>
-          <li><a href="trilha.html#frase"><b>02</b> Tempo e frase <span>Iniciante</span></a></li>
-          <li><a href="trilha.html#harmonia"><b>03</b> Harmonia útil <span>Quarto</span></a></li>
-          <li><a href="trilha.html#maos"><b>04</b> As mãos no aparelho <span>Quarto</span></a></li>
-          <li><a href="trilha.html#mistura"><b>05</b> A primeira mistura <span>Opener</span></a></li>
-          <li><a href="trilha.html#set"><b>06</b> Set com desenho <span>Peak</span></a></li>
-          <li><a href="trilha.html#pista"><b>07</b> Da residência à pista <span>Profissional</span></a></li>
+          <li><a href="pages/trilha.html#ouvido"><b>01</b> Ouvido de cabine <span>Iniciante</span></a></li>
+          <li><a href="pages/trilha.html#frase"><b>02</b> Tempo e frase <span>Iniciante</span></a></li>
+          <li><a href="pages/trilha.html#harmonia"><b>03</b> Harmonia útil <span>Quarto</span></a></li>
+          <li><a href="pages/trilha.html#maos"><b>04</b> As mãos no aparelho <span>Quarto</span></a></li>
+          <li><a href="pages/trilha.html#mistura"><b>05</b> A primeira mistura <span>Opener</span></a></li>
+          <li><a href="pages/trilha.html#set"><b>06</b> Set com desenho <span>Peak</span></a></li>
+          <li><a href="pages/trilha.html#pista"><b>07</b> Da residência à pista <span>Profissional</span></a></li>
         </ol>
+        <p><a href="pages/sala.html">Abrir a sala de estudos</a> — doze aulas, checklist e laboratório, no mesmo arco da trilha.</p>
       </div>
     </section>
     <section class="section">
@@ -130,7 +164,7 @@
           <p class="eyebrow">Simulador</p>
           <h2>Dois players e um mixer, com nome próprio.</h2>
           <p class="lede">Agulha V1 e Cabine M2 seguem a lógica da cabine profissional: jog, cue, pitch, hot cues, loop, EQ de três bandas, faders e pré-escuta. O som é sintetizado aqui. Nenhuma faixa de terceiro entra no estudo.</p>
-          <a class="btn btn--acid" href="simulador.html">Entrar na cabine</a>
+          <a class="btn btn--acid" href="pages/simulador.html">Entrar na cabine</a>
         </div>
       </div>
     </section>
@@ -142,12 +176,14 @@
         <small>Projeto de estudo. A marca, a trilha e o simulador foram desenhados juntos: a interface ensina o mesmo que o texto.</small>
       </div>
       <nav aria-label="Rodapé">
-        <a href="trilha.html">Trilha</a> ·
-        <a href="conceitos.html">Conceitos</a> ·
-        <a href="simulador.html">Simulador</a>
+        <a href="pages/trilha.html">Trilha</a> ·
+        <a href="pages/sala.html">Sala</a> ·
+        <a href="pages/conceitos.html">Conceitos</a> ·
+        <a href="pages/simulador.html">Simulador</a>
       </nav>
     </div>
   </footer>
   <script type="module" src="js/nav.js"></script>
+  <script type="module" src="js/carousel.js?v=2"></script>
 </body>
 </html>

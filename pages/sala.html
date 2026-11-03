@@ -1,0 +1,400 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sala de estudos | VibeDJ</title>
+  <meta name="description" content="Quatro módulos e doze aulas: ouvido, frase, cabine, beatmatch, harmonia, set e a passagem para a pista. Checklist e progresso neste navegador.">
+  <meta name="theme-color" content="#0C0D0A">
+  <meta property="og:title" content="Sala de estudos VibeDJ">
+  <meta property="og:description" content="A trilha em aulas: checklist, laboratório e o simulador na hora do gesto.">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="../assets/cena-estudo.jpg">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="../meta/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/academy.css?v=12">
+</head>
+<body data-page="sala">
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="logo" href="../index.html"><img src="../assets/logo.svg" alt="" width="36" height="36"><span>Vibe<em>DJ</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav-panel" id="nav" aria-label="Seções">
+      <a href="../index.html" data-nav="inicio">Início</a>
+      <a href="trilha.html" data-nav="trilha">Trilha</a>
+      <a href="sala.html" data-nav="sala">Sala</a>
+      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="metodo.html" data-nav="metodo">Método</a>
+      <a href="estudio.html" data-nav="estudio">Estúdio</a>
+      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+    </nav>
+  </header>
+  <main id="conteudo">
+    <div class="wrap page-intro">
+      <p class="eyebrow">Sala de estudos</p>
+      <h1>Doze aulas. Uma de cada vez.</h1>
+      <p class="lede">Quatro módulos, do ouvido à pista. Cada aula tem uma escuta, um checklist e um lugar para praticar. O progresso fica neste navegador. A noite real ainda pede a hora seguinte.</p>
+    </div>
+    <div class="wrap study" data-study>
+      <p class="study__meter"><span data-meter>0% · 0 de 12 aulas</span></p>
+      <div class="study__track" aria-hidden="true"><span data-meter-bar></span></div>
+      <div class="study__layout">
+        <nav class="study__nav" aria-label="Módulos do curso">
+          <div class="study__group">
+            <p class="level">Iniciante</p>
+            <h2>Fundação da cabine</h2>
+            <button class="study__open" type="button" data-open="cabine" aria-controls="cabine"><span><b>01</b> Anatomia da cabine</span><small>12 min</small></button>
+            <button class="study__open" type="button" data-open="frase" aria-controls="frase"><span><b>02</b> Tempo e frase</span><small>18 min</small></button>
+            <button class="study__open" type="button" data-open="ganho" aria-controls="ganho"><span><b>03</b> Ganho, cue e booth</span><small>10 min</small></button>
+          </div>
+          <div class="study__group">
+            <p class="level">Quarto</p>
+            <h2>Beatmatch e transições</h2>
+            <button class="study__open" type="button" data-open="pitch" aria-controls="pitch"><span><b>04</b> Pitch e fase</span><small>22 min</small></button>
+            <button class="study__open" type="button" data-open="grave" aria-controls="grave"><span><b>05</b> EQ e um grave</span><small>16 min</small></button>
+            <button class="study__open" type="button" data-open="troca" aria-controls="troca"><span><b>06</b> A troca na frase</span><small>14 min</small></button>
+            <button class="study__open" type="button" data-open="sync" aria-controls="sync"><span><b>07</b> O lugar do sync</span><small>15 min</small></button>
+            <button class="study__open" type="button" data-open="faixa" aria-controls="faixa"><span><b>08</b> A faixa do estudo</span><small>13 min</small></button>
+          </div>
+          <div class="study__group">
+            <p class="level">Peak</p>
+            <h2>Harmonia, energia e pista</h2>
+            <button class="study__open" type="button" data-open="harmonia" aria-controls="harmonia"><span><b>09</b> Roda e quadrado</span><small>20 min</small></button>
+            <button class="study__open" type="button" data-open="loop" aria-controls="loop"><span><b>10</b> Cue, loop e ponto</span><small>18 min</small></button>
+            <button class="study__open" type="button" data-open="set" aria-controls="set"><span><b>11</b> Set com desenho</span><small>24 min</small></button>
+          </div>
+          <div class="study__group">
+            <p class="level">Profissional</p>
+            <h2>Conclusão de cabine</h2>
+            <button class="study__open" type="button" data-open="pista" aria-controls="pista"><span><b>12</b> Da residência à pista</span><small>12 min</small></button>
+          </div>
+        </nav>
+        <div>
+          <article class="lesson is-on" id="cabine" data-lesson-panel="cabine">
+            <p class="level">Iniciante · Fundação da cabine</p>
+            <header>
+              <h2 tabindex="-1">Anatomia da cabine</h2>
+              <p class="lesson__time">12 min</p>
+            </header>
+            <div class="prose">
+              <p>O player entrega a faixa. O <strong>trim</strong> acerta o tamanho dela. O <strong>EQ</strong> esculpe. O <strong>fader</strong> decide se a sala ouve. O <strong>cue</strong> é a escuta de antes do fader: o fone ouve o que a pista ainda não ouve.</p>
+              <p>No jog, o centro em modo vinil arrasta o tempo. A borda empurra o tempo por um instante e volta: isso é nudge, não um BPM novo. O fader de pitch muda o BPM. Na lógica desta cabine, <strong>para baixo fica mais rápido</strong>. Os players se chamam Agulha V1. O mixer é a Cabine M2.</p>
+              <p class="callout">No simulador, cumpra as duas primeiras missões antes de marcar o checklist: carregar o par de estudo e usar play e cue até o ponto ficar nos dedos.</p>
+              <p><a href="simulador.html">Abrir o simulador</a> · <a href="trilha.html#maos">Ler a estação das mãos</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="cabine-1"> Localizar jog, pitch, cue e fader de canal no simulador</label></li>
+                <li><label><input type="checkbox" data-check="cabine-2"> Diferenciar o centro do jog, que arrasta, da borda, que só empurra</label></li>
+                <li><label><input type="checkbox" data-check="cabine-3"> Ler o BPM no deck enquanto o outro lado ainda está no cue</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="cabine" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="frase" data-lesson-panel="frase">
+            <p class="level">Iniciante · Fundação da cabine</p>
+            <header>
+              <h2 tabindex="-1">Tempo e frase</h2>
+              <p class="lesson__time">18 min</p>
+            </header>
+            <div class="prose">
+              <p>BPM é a velocidade. Frase é a arquitetura. Em house e techno, a frase costuma ter <strong>8 compassos</strong> — 32 tempos. Duas frases fazem o bloco de 16, tamanho de muita intro e de muito drop.</p>
+              <p>A 124 BPM, 8 compassos duram cerca de 15 segundos. Por isso se conta em cima do kick, não do relógio. O downbeat do compasso 1 é o lugar limpo para a outra faixa começar a frase dela. Os compassos 7 e 8 são a janela.</p>
+              <div id="phrase-app"></div>
+              <p class="callout">Conte em voz alta até errar. O erro é o dado. Recomece do 1, sem acelerar o clique para ficar mais fácil.</p>
+              <p><a href="trilha.html#frase">Ler a estação da frase</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="frase-1"> Contar 8, 16 e 32 tempos em voz alta, seguindo o clique ou o kick</label></li>
+                <li><label><input type="checkbox" data-check="frase-2"> Marcar o downbeat do compasso 1 de cada frase</label></li>
+                <li><label><input type="checkbox" data-check="frase-3"> Apontar, antes da quebra acabar, onde a próxima faixa entraria</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="frase" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="ganho" data-lesson-panel="ganho">
+            <p class="level">Iniciante · Fundação da cabine</p>
+            <header>
+              <h2 tabindex="-1">Ganho, cue e booth</h2>
+              <p class="lesson__time">10 min</p>
+            </header>
+            <div class="prose">
+              <p>Se o som está alto e sujo, o problema quase nunca é mais master. É ganho acumulado. O trim deixa a faixa num tamanho parecido com a outra <strong>antes</strong> do fader subir. Os dois faders no topo, com trim quente, estouram o limiter e o kick murcha.</p>
+              <p>O caminho é fixo: player, trim, EQ, cue do fone, fader de canal, crossfader, master. O cue sai antes do fader. Numa cabine real, o booth é outra saída, para quem está na mesa ouvir sem alterar o salão. Neste simulador há uma saída só: o knob CUE/MASTER mistura a pré-escuta com o master nessa saída.</p>
+              <p class="callout">Volume baixo no fone. Estudo longo com kick no talo só cansa o ouvido que você precisa aguçado.</p>
+              <p><a href="conceitos.html">Ver o caminho do sinal</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="ganho-1"> Ajustar o trim até as duas faixas terem tamanho parecido, sem encostar no vermelho</label></li>
+                <li><label><input type="checkbox" data-check="ganho-2"> Pré-escutar no cue sem mandar essa escuta para a sala</label></li>
+                <li><label><input type="checkbox" data-check="ganho-3"> Nomear a ordem: trim, EQ, cue, fader, master</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="ganho" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="pitch" data-lesson-panel="pitch">
+            <p class="level">Quarto · Beatmatch e transições</p>
+            <header>
+              <h2 tabindex="-1">Pitch e fase</h2>
+              <p class="lesson__time">22 min</p>
+            </header>
+            <div class="prose">
+              <p>Beatmatch são duas tarefas em ordem. Primeiro o <strong>tempo</strong>: os BPMs efetivos se encontram, e quem faz isso é o fader de pitch. Depois a <strong>fase</strong>: os kicks caem juntos, e quem faz isso é o jog. Quem mexe nos dois ao mesmo tempo não sabe qual erro está corrigindo.</p>
+              <p>Quarto Escuro está a 122. Sal de Pista, a 124. As duas em 8A. Sem sync. Quando os kicks virarem um só por quatro compassos — 16 tempos, metade de uma frase — a fase segurou.</p>
+              <p class="callout">A missão de tempo no simulador não conta se o sync foi usado. Zere e repita.</p>
+              <p><a href="simulador.html">Treinar a missão de tempo</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="pitch-1"> Igualar o BPM com o pitch, sem tocar no jog ainda</label></li>
+                <li><label><input type="checkbox" data-check="pitch-2"> Alinhar os kicks só com o jog, depois que o tempo casou</label></li>
+                <li><label><input type="checkbox" data-check="pitch-3"> Segurar quatro compassos com um kick só, sem sync</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="pitch" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="grave" data-lesson-panel="grave">
+            <p class="level">Quarto · Beatmatch e transições</p>
+            <header>
+              <h2 tabindex="-1">EQ e um grave</h2>
+              <p class="lesson__time">16 min</p>
+            </header>
+            <div class="prose">
+              <p>O EQ da cabine não é o de um estúdio. Ele existe para duas faixas dividirem o ar. O gesto central é tirar, não acrescentar. Kill no grave significa: este baixo saiu.</p>
+              <p>A troca de grave é o que a pista entende como “agora é a outra”. Segure o grave da faixa que chega lá embaixo, deixe agudo e médio entrarem, e no downbeat da frase troque: o grave novo sobe, o antigo desce. Dois kicks no mesmo low empastam o PA. Depois da troca, devolva o EQ para perto do meio-dia.</p>
+              <p class="callout">Kick e baixo brigam no mesmo território. Chamar os dois de “a batida” é o erro que o EQ não conserta.</p>
+              <p><a href="simulador.html">Treinar a missão do grave</a> · <a href="conceitos.html">Mapa de frequências</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="grave-1"> Deixar um só grave enquanto os dois faders estão abertos</label></li>
+                <li><label><input type="checkbox" data-check="grave-2"> Abrir o agudo da faixa que entra nos últimos 8 tempos da frase</label></li>
+                <li><label><input type="checkbox" data-check="grave-3"> Devolver o EQ ao centro depois que a troca assentou</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="grave" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="troca" data-lesson-panel="troca">
+            <p class="level">Quarto · Beatmatch e transições</p>
+            <header>
+              <h2 tabindex="-1">A troca na frase</h2>
+              <p class="lesson__time">14 min</p>
+            </header>
+            <div class="prose">
+              <p>Cada transição faz uma coisa: manter, subir, respirar ou cortar. Se você não escolhe, o crossfader escolhe por você. A entrada limpa é no começo da frase, no downbeat do compasso 1. No meio do vocal, a pista sente sem saber nomear.</p>
+              <p>Intro encontra o outro. Quando a faixa não oferece esse espaço, um loop de 4 ou 8 tempos segura a frase até a outra estar pronta. Loop não é enfeite. Se o crossfader estiver em curva de corte, a mistura longa mora nos faders de canal.</p>
+              <p class="callout">Uma variável nesta aula: só o lugar da entrada. Tempo e grave já foram treinados.</p>
+              <p><a href="trilha.html#mistura">Ler a primeira mistura</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="troca-1"> Trocar no começo da frase, não no meio dela</label></li>
+                <li><label><input type="checkbox" data-check="troca-2"> Dizer, antes de abrir o fader, se a troca mantém, sobe, respira ou corta</label></li>
+                <li><label><input type="checkbox" data-check="troca-3"> Usar um loop curto quando a intro não cabe na frase</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="troca" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="sync" data-lesson-panel="sync">
+            <p class="level">Quarto · Beatmatch e transições</p>
+            <header>
+              <h2 tabindex="-1">O lugar do sync</h2>
+              <p class="lesson__time">15 min</p>
+            </header>
+            <div class="prose">
+              <p>Sync é estepe. Na noite, com monitor ruim e pedido no ouvido, ele segura a fase para você cuidar da sala. No estudo, ele esconde o músculo que você veio treinar. Isso é didática, não moralismo.</p>
+              <p>Use o sync uma vez para ouvir só o tom e a escolha da faixa. Depois desligue e recupere o alinhamento com pitch e jog. A missão de beatmatch do simulador não completa se o sync entrou. Zerar a tentativa devolve o pitch e apaga essa marca.</p>
+              <p class="callout">Sync para estudar harmonia e seleção. Pitch e jog para estudar o tempo.</p>
+              <p><a href="metodo.html">Ler o lugar do sync no método</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="sync-1"> Achar o sync e saber o que ele iguala: BPM e fase</label></li>
+                <li><label><input type="checkbox" data-check="sync-2"> Ligar, ouvir o casamento, e desligar de propósito</label></li>
+                <li><label><input type="checkbox" data-check="sync-3"> Recuperar os kicks só com pitch e jog</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="sync" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="faixa" data-lesson-panel="faixa">
+            <p class="level">Quarto · Beatmatch e transições</p>
+            <header>
+              <h2 tabindex="-1">A faixa do estudo</h2>
+              <p class="lesson__time">13 min</p>
+            </header>
+            <div class="prose">
+              <p>O som do simulador nasce no navegador. House, techno, afro house, melodic techno e drum and bass são padrões originais. Nenhuma faixa de terceiro entra no treino. Quarto Escuro, 122, e Sal de Pista, 124, as duas em 8A, são o par de partida.</p>
+              <p>Na mala de verdade, a música entra de forma lícita: compra, Bandcamp, selo, promo com permissão, ou faixa que você mesmo fez. O nome na crate carrega BPM e tom, para a key errada não mentir na hora. Famílias diferentes — four-on-the-floor e break — não são a faixa seguinte. São outra língua.</p>
+              <p class="callout">Catálogo de streaming descobre música. A mixagem desta academia acontece no motor da cabine.</p>
+              <p><a href="conceitos.html">Famílias de pulso</a> · <a href="simulador.html">Carregar o par de estudo</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="faixa-1"> Nomear o par de estudo: BPM e tom de cada uma</label></li>
+                <li><label><input type="checkbox" data-check="faixa-2"> Separar kick e baixo numa delas, de ouvido</label></li>
+                <li><label><input type="checkbox" data-check="faixa-3"> Saber três jeitos lícitos de uma faixa entrar numa crate real</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="faixa" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="harmonia" data-lesson-panel="harmonia">
+            <p class="level">Peak · Harmonia, energia e pista</p>
+            <header>
+              <h2 tabindex="-1">Roda e quadrado</h2>
+              <p class="lesson__time">20 min</p>
+            </header>
+            <div class="prose">
+              <p>Dois graves no mesmo tempo já soam sujos no tom certo. Harmonia é o segundo filtro. A roda organiza 24 tons: o número vizinho e a letra relativa costumam conviver. Um salto grande pede mais espaço — filtre, encurte a sobreposição, ou não sobreponha a melodia.</p>
+              <p>O exercício-base é um quadrado. Quatro faixas, um arco, volta para casa. Energia continua na frente: uma faixa compatível e morta não salva uma pista. Vocal pede vizinhança estrita. Sem canto, um contraste no drop pode ser escolha.</p>
+              <ol class="square">
+                <li><b>1 · 8A</b> Lá menor</li>
+                <li><b>2 · 8B</b> Dó maior</li>
+                <li><b>3 · 9B</b> Sol maior</li>
+                <li><b>4 · 9A</b> Mi menor</li>
+              </ol>
+              <p>8A → 8B → 9B → 9A. Toque um código na roda. O aceso é o tom. O cobre é a vizinhança.</p>
+              <div id="camelot-app"></div>
+              <p class="callout">Diga os três vizinhos de 8A sem olhar. Depois ouça o quadrado uma vez com sync, só para o tom, e outra no jog.</p>
+              <p><a href="trilha.html#harmonia">Ler harmonia útil</a> · <a href="conceitos.html#camelot">A roda em Conceitos</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="harmonia-1"> Dizer os vizinhos e o relativo de 8A sem olhar a roda</label></li>
+                <li><label><input type="checkbox" data-check="harmonia-2"> Planejar quatro faixas no quadrado, uma frase inteira entre elas</label></li>
+                <li><label><input type="checkbox" data-check="harmonia-3"> Anotar se um choque foi grave, melodia, ou os dois</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="harmonia" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="loop" data-lesson-panel="loop">
+            <p class="level">Peak · Harmonia, energia e pista</p>
+            <header>
+              <h2 tabindex="-1">Cue, loop e ponto</h2>
+              <p class="lesson__time">18 min</p>
+            </header>
+            <div class="prose">
+              <p>O cue no downbeat é memória muscular. Hot cue é esse ponto guardado, para você não procurar a frase no escuro. O loop de 4 tempos, o botão 4 do simulador, segura um pedaço até a outra faixa estar no lugar. O de 8 tempos segura uma frase inteira quando a intro não colabora.</p>
+              <p>Treinar a entrada no drop sem olhar o tempo todo a forma de onda é o ponto desta aula. O olho confirma. O ouvido decide. Se você só acerta olhando o desenho, ainda não é beatmatch.</p>
+              <p class="callout">Missão do simulador: segure quatro tempos com o botão 4, e volte ao ponto com CUE até não precisar do manual.</p>
+              <p><a href="simulador.html">Abrir as missões de cue e loop</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="loop-1"> Marcar o ponto de partida no downbeat e voltar nele com CUE</label></li>
+                <li><label><input type="checkbox" data-check="loop-2"> Segurar quatro tempos em loop sem perder o 1</label></li>
+                <li><label><input type="checkbox" data-check="loop-3"> Entrar na frase seguinte sem ficar o tempo todo na forma de onda</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="loop" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="set" data-lesson-panel="set">
+            <p class="level">Peak · Harmonia, energia e pista</p>
+            <header>
+              <h2 tabindex="-1">Set com desenho</h2>
+              <p class="lesson__time">24 min</p>
+            </header>
+            <div class="prose">
+              <p>Um set não é a pasta favorita em sequência. É uma curva. Abertura mais baixa e mais longa, para a pista chegar. Subida com frases inteiras. Um pico. Uma respiração — quebra, faixa mais vazia — e outro pico, se a noite pedir. O fechamento devolve as pessoas ao chão.</p>
+              <p>Leitura de pista é concreto: pessoas paradas na borda, núcleo dançando, gente indo ao bar no meio da sua frase favorita. Se o núcleo esvazia, você subiu cedo ou ficou abstrato. Volte um degrau de energia. Não prove a próxima faixa mais dura.</p>
+              <p class="callout">Desenhe 8 blocos, energia de 1 a 5. Toque só três faixas seguindo esse desenho. No dia seguinte, ouça sem imagem e marque onde a energia mente.</p>
+              <p><a href="trilha.html#set">Ler a estação do set</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="set-1"> Desenhar oito blocos com energia de 1 a 5</label></li>
+                <li><label><input type="checkbox" data-check="set-2"> Tocar três faixas sem furar o desenho</label></li>
+                <li><label><input type="checkbox" data-check="set-3"> Reservar um plano mais baixo para quando o núcleo esvaziar</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="set" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+          <article class="lesson" id="pista" data-lesson-panel="pista">
+            <p class="level">Profissional · Conclusão de cabine</p>
+            <header>
+              <h2 tabindex="-1">Da residência à pista</h2>
+              <p class="lesson__time">12 min</p>
+            </header>
+            <div class="prose">
+              <p>Profissional, aqui, não é um título. É um conjunto de hábitos. A crate está nomeada, com cue no downbeat. O soundcheck acontece antes da sala encher: você acha o ganho, conhece o limiter da casa e não descobre o grave no primeiro drop com gente na frente.</p>
+              <p>No camarim, o briefing vale mais do que o seu pico preferido. Abertura constrói. Peak-time sustenta. Closing recolhe. O critério desta academia: gravar um set de 40 minutos, ouvir no dia seguinte, e apontar três decisões — uma boa, uma cedo, uma que ignorou a frase — sem se defender.</p>
+              <p class="callout">O simulador ensina o gesto. A pista ensina o resto. As duas horas não se substituem.</p>
+              <p><a href="trilha.html#pista">Ler a estação da pista</a></p>
+              <h3>Checklist da aula</h3>
+              <ul class="lesson__checks">
+                <li><label><input type="checkbox" data-check="pista-1"> Listar um soundcheck de três passos: ganho, grave, limiter</label></li>
+                <li><label><input type="checkbox" data-check="pista-2"> Separar o que é abertura, pico e fechamento num mesmo desenho</label></li>
+                <li><label><input type="checkbox" data-check="pista-3"> Apontar três decisões numa gravação, sem se defender</label></li>
+              </ul>
+              <button class="btn btn--acid" type="button" data-done="pista" aria-pressed="false">Concluir aula</button>
+            </div>
+          </article>
+        </div>
+      </div>
+      <section class="section">
+        <p class="eyebrow">Boas práticas</p>
+        <h2>Hábitos da cabine</h2>
+        <ul class="signals">
+          <li><b>Ouvido</b> Separar kick, baixo, hat e clap antes de mexer no EQ.</li>
+          <li><b>Frase</b> Oito compassos são 32 tempos. A troca mora no 1.</li>
+          <li><b>Tom</b> Vizinho ou relativo. Energia ainda decide se a faixa entra.</li>
+          <li><b>Mãos</b> Pitch para o tempo. Jog para a fase. Uma mão de cada vez.</li>
+          <li><b>Energia</b> Um degrau por bloco. O pico não abre a noite.</li>
+          <li><b>Pista</b> Olhar o núcleo dançando, não só o próprio fone.</li>
+        </ul>
+      </section>
+      <section>
+        <p class="eyebrow">Laboratório</p>
+        <h2>Treinos curtos</h2>
+        <p class="lede">Uma variável por sessão. O rito completo de 45 minutos continua no <a href="metodo.html">método</a>.</p>
+        <div class="lab">
+          <article>
+            <p class="lesson__time">8 min</p>
+            <h3>Metrônomo vivo</h3>
+            <p>Manter a contagem colada no grid por dois minutos.</p>
+            <ol>
+              <li>Abra a aula da frase e ouça o clique a 124.</li>
+              <li>Conte 1-2-3-4 em voz alta, oito compassos sem olhar a grade.</li>
+              <li>Quando errar, anote o compasso e recomece do 1.</li>
+            </ol>
+          </article>
+          <article>
+            <p class="lesson__time">12 min</p>
+            <h3>Duplo kick</h3>
+            <p>Beatmatch e a troca de grave em 32 tempos.</p>
+            <ol>
+              <li>Carregue Quarto Escuro e Sal de Pista, sem sync.</li>
+              <li>Case o tempo no pitch e a fase no jog.</li>
+              <li>Corte o grave de quem entra, abra o fader na frase, devolva o EQ.</li>
+            </ol>
+          </article>
+          <article>
+            <p class="lesson__time">20 min</p>
+            <h3>Curva de energia</h3>
+            <p>Quatro faixas, BPM subindo de dois em dois.</p>
+            <ol>
+              <li>Escolha quatro faixas e anote BPM e tom.</li>
+              <li>Desenhe o arco no papel antes de tocar.</li>
+              <li>Toque só as entradas, uma frase inteira entre elas.</li>
+            </ol>
+          </article>
+          <article>
+            <p class="lesson__time">10 min</p>
+            <h3>Booth imaginário</h3>
+            <p>Dois minutos de passagem educada.</p>
+            <ol>
+              <li>O deck A é o set que já está no ar.</li>
+              <li>O deck B prepara a primeira faixa de quem chega.</li>
+              <li>Passe no downbeat, com um grave só.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap">
+      <small>VibeDJ · sala de estudos. A leitura longa está na <a href="trilha.html">trilha</a>. O gesto está no <a href="simulador.html">simulador</a>.</small>
+    </div>
+  </footer>
+  <script type="module" src="../js/nav.js"></script>
+  <script type="module" src="../js/widgets.js"></script>
+  <script type="module" src="../js/estudo.js"></script>
+</body>
+</html>

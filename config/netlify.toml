@@ -1,0 +1,13 @@
+# Publicação estática — mantém a raiz enxuta (só index.html) e expõe SEO na raiz do domínio.
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/meta/robots.txt"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/meta/sitemap.xml"
+  status = 200

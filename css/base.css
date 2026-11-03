@@ -90,7 +90,7 @@ h3 { font-size: 1.45rem; letter-spacing: -0.03em; }
   justify-content: space-between;
   gap: 16px;
   min-height: var(--header);
-  padding: 12px 22px;
+  padding: 12px max(16px, calc((100% - 1180px) / 2));
   background: rgba(12, 13, 10, 0.86);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(16px);
@@ -185,17 +185,19 @@ h3 { font-size: 1.45rem; letter-spacing: -0.03em; }
     right: 0;
     flex-direction: column;
     align-items: stretch;
-    padding: 12px;
+    padding: 8px 16px 12px;
     background: #10120c;
     border-bottom: 1px solid var(--line);
   }
   .nav-panel.is-open { display: flex; }
-  .nav-panel a { padding: 12px; }
+  .nav-panel a { padding: 12px 0; }
+  .nav-panel .nav-cta { align-self: flex-start; padding: 0.55rem 0.95rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .marquee { animation: none !important; }
+  .marquee, .reel__progress span { animation: none !important; }
+  .reel__track { transition: none; }
 }
 
 @media print {
