@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratório de engenharia reversa de clonagem musical | VibeDJ</title>
+  <meta name="description" content="Leitura de MP3, WAV e outros áudios: forma de onda, espectrograma, andamento e camadas de escuta. O arquivo fica no navegador.">
+  <meta name="theme-color" content="#0C0D0A">
+  <meta property="og:title" content="Laboratório de engenharia reversa | VibeDJ">
+  <meta property="og:description" content="Espectrograma, andamento e camadas de escuta de um arquivo de áudio, mais um groove de estudo sintetizado.">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="../assets/detalhe-jog.jpg">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="../meta/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/academy.css">
+  <link rel="stylesheet" href="../css/laboratorio.css?v=9">
+</head>
+<body data-page="laboratorio">
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+  <header class="site-header">
+    <a class="logo" href="../index.html"><img src="../assets/logo.svg" alt="" width="36" height="36"><span>Vibe<em>DJ</em></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="nav-panel" id="nav" aria-label="Seções">
+      <a href="../index.html" data-nav="inicio">Início</a>
+      <a href="trilha.html" data-nav="trilha">Trilha</a>
+      <a href="sala.html" data-nav="sala">Sala</a>
+      <a href="conceitos.html" data-nav="conceitos">Conceitos</a>
+      <a href="metodo.html" data-nav="metodo">Método</a>
+      <a href="estudio.html" data-nav="estudio">Estúdio</a>
+      <a href="laboratorio.html" data-nav="laboratorio">Laboratório</a>
+      <a class="nav-cta" href="simulador.html" data-nav="simulador">Simulador</a>
+    </nav>
+  </header>
+  <main id="conteudo">
+    <div class="wrap page-intro page-intro--lab">
+      <p class="eyebrow">Laboratório</p>
+      <h1>Engenharia reversa de clonagem musical.</h1>
+      <p class="lede">Uma autópsia de arquitetura. Você lê como um groove de tech house se sustenta e troca cada camada por um equivalente seu. A proposta só toca depois que você aprova as seis decisões.</p>
+    </div>
+    <div class="wrap prose">
+      <h2>O que esta bancada faz</h2>
+      <p>O pedido de partida era este: ler os elementos de uma track eletrônica e substituí-los por outros parecidos. Isso não é um remix do arquivo final. É estudar a construção — andamento, frase, quem entra, quem sai — e produzir outra peça com a mesma lógica e com identidade própria.</p>
+      <p>Há um limite físico no meio do caminho. Um bounce estéreo não guarda o projeto. Não diz qual sintetizador, qual nota MIDI, qual automação. Separar fontes é estimar. A mistura soma sinais; quando dois elementos ocupam a mesma região ao mesmo tempo, a conta não tem uma única resposta. A stem ajuda a ouvir. Não devolve a sessão.</p>
+      <p>A leitura aqui em cima abre um arquivo seu: MP3, WAV, FLAC, OGG, M4A e o que o navegador conseguir decodificar. O arquivo não sai do computador. Você vê forma de onda, espectrograma, andamento e camadas de escuta — centro, lados, ataque, harmonia e faixas de frequência. Isso é uma estimativa da mix. Não devolve kick, baixo e synth como faixas da sessão, e não exporta uma cópia da música.</p>
+      <p>A bancada de baixo continua sintetizada: 124 BPM, 4/4, Lá menor, dezesseis compassos. O número 124 é valor de estudo, não a leitura de uma faixa.</p>
+      <h2>Quatro gestos</h2>
+      <ol>
+        <li><strong>Análise estrutural.</strong> Andamento, compasso, intro, groove, break e drop.</li>
+        <li><strong>Separação por função.</strong> Solo de kick, clap, hat, baixo, stab e transição. O ouvido nomeia o papel.</li>
+        <li><strong>Reconstrução.</strong> O mapa de seções permanece. O que muda é o som que ocupa cada papel.</li>
+        <li><strong>Substituição com aprovação.</strong> Manter, substituir ou rejeitar. Sem as seis respostas, a proposta fica muda.</li>
+      </ol>
+      <p class="callout">Clonar, neste laboratório, é copiar a arquitetura. Melodia reconhecível, gravação alheia e timbre assinado ficam de fora. Estilo e técnica não são a obra. A expressão concreta é.</p>
+      <p>O vocabulário das camadas — ritmo, graves, harmonia, melodia, vocal, FX e arranjo — está resumido na documentação do repositório: <a href="../docs/clonagem/elementos-musica-eletronica.md">elementos da música eletrônica</a> e <a href="../docs/clonagem/metodo-cadeiras.md">método das cadeiras</a>.</p>
+    </div>
+    <div class="wrap" id="leitura">
+      <p class="eyebrow">Leitura de arquivo</p>
+      <h2>Abra a mix e separe a escuta.</h2>
+      <p class="lede grade-lede">Ao decodificar, o sistema monta o inventário de kick, clap, hi-hat, baixo, stab, transição, percussão e vocal — estimativa para clonagem, não stems isolados.</p>
+      <div class="lab-bench" data-analise>
+        <p>A leitura precisa de JavaScript.</p>
+      </div>
+    </div>
+    <div class="wrap" id="transplante">
+      <p class="eyebrow">Transplante</p>
+      <h2>Mesa de operação.</h2>
+      <p class="lede grade-lede">Carregue duas tracks. As duas são doadoras. Quando as leituras terminam, abre a mesa: o receptor é uma <strong>track nova</strong>, montada órgão por órgão — kick, clap, hi-hat, baixo, stab — retirados de A, de B, ou deixados de fora.</p>
+      <div class="lab-bench lab-bench--transplante" data-transplante></div>
+    </div>
+    <div class="wrap" id="grade">
+      <p class="eyebrow">Grade de cadeiras</p>
+      <h2>Onde cada papel entra — e o que você troca ou tira.</h2>
+      <p class="lede grade-lede">Quatro blocos de quatro compassos. Clique na célula: vazio, presente ou troca planejada. Use o mapa didático para espelhar o groove de estudo ou marque a referência depois da leitura de arquivo.</p>
+      <div class="lab-bench lab-bench--grade">
+        <div id="grade-cadeiras-app"></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <ol class="lab-flow lab-flow--10">
+        <li><b>01 · Entrada</b> Duas tracks doadoras. A mesa abre quando as duas leituras terminam.</li>
+        <li><b>02 · Inventário</b> Kick, clap, hat, baixo, stab, FX, perc e vocal estimados ao decodificar.</li>
+        <li><b>03 · Grade</b> Marque presença, troca ou retirada por seção — antes de decidir na bancada.</li>
+        <li><b>04 · Separação</b> Solo de cada camada. Em tech house, kick e baixo brigam no mesmo grave: ouça um de cada vez.</li>
+        <li><b>05 · Inventário</b> Seis papéis. Estrutura, troca ou retirada — a decisão é sua.</li>
+        <li><b>06 · Proposta</b> Equivalentes: corpo do kick, palma, hat aberto, baixo no contratempo, acorde suspenso, impacto.</li>
+        <li><b>07 · Relatório</b> JSON ou pacote completo (leitura + grade + bancada). Não é um projeto de DAW.</li>
+        <li><b>08 · Aprovação</b> Confirme manter, substituir ou rejeitar em cada camada. A proposta sintetizada só sobe depois das seis respostas.</li>
+        <li><b>09 · LMMS</b> Leve a grade ou o pacote para o LMMS: 124 BPM, 16 compassos, samples e MIDI seus. A referência fica muda — alinha tempo e seções.</li>
+        <li><b>10 · Export</b> Só o projeto novo em WAV ou MP3. Arquitetura estudada; timbre, melodia e master são seus — não redistribua stems alheios.</li>
+      </ol>
+      <div class="lab-bench" data-lab>
+        <p>A bancada sonora precisa de JavaScript.</p>
+      </div>
+    </div>
+    <div class="wrap prose">
+      <h2>O que dá para ver, e o que não volta</h2>
+      <table>
+        <caption>Leitura de estudo. Na bancada os valores são escritos por nós. Num arquivo alheio, a coluna do meio vira estimativa.</caption>
+        <thead>
+          <tr><th>Camada</th><th>O que a escuta mostra</th><th>O que o bounce não entrega</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Kick</td><td>Onde cai o ataque e quanto o corpo dura</td><td>Sample, envelope e cadeia de saturação</td></tr>
+          <tr><td>Baixo</td><td>Se anda no tempo, no contratempo ou em notas vizinhas</td><td>A linha MIDI e o filtro exatos</td></tr>
+          <tr><td>Hats</td><td>Densidade e se o contratempo atrasa</td><td>O swing numérico e o sample</td></tr>
+          <tr><td>Stab</td><td>Se o acorde é menor, suspenso ou some</td><td>O preset e a voz que o tocou</td></tr>
+          <tr><td>Transição</td><td>Subida longa ou golpe no retorno</td><td>O plugin que desenhou o efeito</td></tr>
+          <tr><td>Mix</td><td>Quem ocupa grave, médio e agudo</td><td>Cada automação da sessão</td></tr>
+        </tbody>
+      </table>
+      <h2>Ferramentas, quando você sair da bancada</h2>
+      <p>Não existe um programa que leia uma track pronta e devolva o projeto. O caminho aberto, para Windows, junta peças. Cada uma faz uma pergunta. Nenhuma substitui a aprovação.</p>
+    </div>
+    <div class="wrap">
+      <div class="tool-grid">
+        <article>
+          <h3>LMMS</h3>
+          <p>Bancada para programar o groove de novo, em MIDI, com sons seus. O exercício de dezesseis compassos cabe num projeto vazio a 124 BPM.</p>
+          <p><a href="https://lmms.io/">lmms.io</a></p>
+        </article>
+        <article>
+          <h3>Sonic Visualiser</h3>
+          <p>Microscópio: forma de onda, espectro, batidas e altura. Serve para marcar seções com o ouvido, não para adivinhar o preset.</p>
+          <p><a href="https://www.sonicvisualiser.org/">sonicvisualiser.org</a></p>
+        </article>
+        <article>
+          <h3>Audacity</h3>
+          <p>Corta um trecho curto de uma referência obtida de forma lícita e compara espectro. O trecho é lupa. Não é o arranjo inteiro.</p>
+          <p><a href="https://www.audacityteam.org/">audacityteam.org</a></p>
+        </article>
+        <article>
+          <h3>Separação de fontes</h3>
+          <p>Moises e Ultimate Vocal Remover estimam bateria, baixo, voz e resto. Em tech house o kick continua grudado no baixo. Use a stem para estudar. Não como master final.</p>
+          <p><a href="https://moises.ai/">moises.ai</a> · <a href="https://github.com/Anjok07/ultimatevocalremovergui">UVR</a></p>
+        </article>
+        <article>
+          <h3>Demucs / UVR</h3>
+          <p>Separação em kick, bateria, baixo, voz e resto. Use stems para marcar a grade — não como sons do projeto final.</p>
+          <p><a href="https://github.com/Anjok07/ultimatevocalremovergui">UVR</a> · <a href="https://github.com/adefossez/demucs">Demucs</a></p>
+        </article>
+        <article>
+          <h3>Analisador v0 (Python)</h3>
+          <p>BPM estimado e JSON de grade vazia para marcar no ouvido. Complementa a leitura no navegador.</p>
+          <p><code>scripts/analisador/grade_v0.py</code></p>
+        </article>
+        <article>
+          <h3>DAW com áudio para MIDI</h3>
+          <p>Ableton Live, entre outras, tenta transcrever melodia, harmonia e bateria. O piano roll que sai é rascunho: oitava errada e nota fantasma são parte do método, não falha sua.</p>
+          <p><a href="https://www.ableton.com/">ableton.com</a></p>
+        </article>
+      </div>
+    </div>
+    <div class="wrap prose">
+      <h2>Leituras</h2>
+      <ul>
+        <li><a href="https://loststoriesacademy.com/blogs-and-tutorials/how-to-reverse-engineer-a-professional-track">How To Reverse Engineer A Professional Track</a> — o alvo é a lógica da faixa, e o teste é conseguir outra música quando a referência sai.</li>
+        <li><a href="https://en.wikipedia.org/wiki/Music_source_separation">Music source separation</a> — separar stems é estimativa: sobra bleed, artefato e instrumento no lugar errado.</li>
+        <li><a href="https://beatstorapon.com/blog/the-evolution-of-music-source-separation-open-research-to-real-world-audio/">The Evolution of Music Source Separation</a> — desmisturar é um problema inverso mal posto. A soma não guarda as parcelas.</li>
+        <li><a href="https://www.scireg.org/eng/copynews/article/reference_inspiration_copying">Reference, Inspiration, Copying or Copyright Infringement?</a> — técnica e estilo, em abstrato, não são o que o direito autoral reserva. A expressão concreta é outra conversa.</li>
+      </ul>
+      <p>O groove de estudo também cabe na <a href="simulador.html">cabine</a>: dois players, um mixer, e o ouvido treinando a frase que esta bancada só desenha.</p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap"><small>VibeDJ · laboratório de engenharia reversa. A referência é sintetizada aqui. Pratique na <a href="simulador.html">cabine</a>.</small></div>
+  </footer>
+  <script type="module" src="../js/nav.js"></script>
+  <script type="module" src="../js/analise.js"></script>
+  <script type="module" src="../js/transplante-lab.js?v=8"></script>
+  <script type="module" src="../js/grade-cadeiras.js"></script>
+  <script type="module" src="../js/laboratorio.js"></script>
+</body>
+</html>

@@ -110,8 +110,8 @@ h3 { font-size: 1.45rem; letter-spacing: -0.03em; }
 .logo img { width: 36px; height: 36px; }
 .logo em { font-style: normal; color: var(--acid); }
 
-.nav-panel { display: flex; align-items: center; gap: 8px 18px; }
-.nav-panel a { text-decoration: none; color: var(--muted); font-size: 0.98rem; }
+.nav-panel { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; justify-content: flex-end; }
+.nav-panel a { text-decoration: none; color: var(--muted); font-size: 0.94rem; }
 .nav-panel a[aria-current="page"] { color: var(--text); }
 .nav-cta {
   background: var(--acid);
@@ -185,6 +185,7 @@ h3 { font-size: 1.45rem; letter-spacing: -0.03em; }
     right: 0;
     flex-direction: column;
     align-items: stretch;
+    justify-content: flex-start;
     padding: 8px 16px 12px;
     background: #10120c;
     border-bottom: 1px solid var(--line);

@@ -17,11 +17,49 @@ function mountCamelot() {
   const root = document.getElementById("camelot-app");
   if (!root) return;
 
+  const stage = document.createElement("div");
+  stage.className = "camelot-stage";
+
   const wheel = document.createElement("div");
   wheel.className = "camelot";
+  wheel.setAttribute("role", "group");
+  wheel.setAttribute("aria-label", "Roda Camelot — anel interior A, exterior B");
+
+  const face = document.createElement("div");
+  face.className = "camelot__face";
+  face.setAttribute("aria-hidden", "true");
+
+  for (let i = 0; i < 12; i += 1) {
+    const tick = document.createElement("span");
+    tick.className = "camelot__tick";
+    tick.style.setProperty("--i", String(i));
+    face.append(tick);
+
+    const hour = document.createElement("span");
+    hour.className = "camelot__hour";
+    hour.style.setProperty("--i", String(i));
+    hour.textContent = String(i + 1);
+    face.append(hour);
+  }
+
+  const hub = document.createElement("div");
+  hub.className = "camelot__hub";
+  hub.innerHTML = '<span class="camelot__hub-kicker">12 posições</span><span class="camelot__hub-title">Camelot</span>';
+  face.append(hub);
+
+  wheel.append(face);
+
   const read = document.createElement("p");
   read.className = "camelot__read";
-  root.append(wheel, read);
+
+  const legend = document.createElement("div");
+  legend.className = "camelot__legend";
+  legend.innerHTML =
+    '<span><i class="camelot__swatch camelot__swatch--a" aria-hidden="true"></i> Interior · <strong>A</strong> · menor</span>' +
+    '<span><i class="camelot__swatch camelot__swatch--b" aria-hidden="true"></i> Exterior · <strong>B</strong> · maior</span>';
+
+  stage.append(wheel, legend, read);
+  root.append(stage);
 
   let current = "8A";
   const buttons = [];
@@ -46,6 +84,10 @@ function mountCamelot() {
   });
 
   function paint() {
+    const selIndex = KEYS.findIndex((item) => String(item.n) === current.slice(0, -1));
+    wheel.style.setProperty("--sel-i", String(selIndex >= 0 ? selIndex : 0));
+    wheel.dataset.code = current;
+
     buttons.forEach((button) => {
       const code = button.dataset.code;
       const on = code === current;
@@ -61,7 +103,12 @@ function mountCamelot() {
     const prev = `${number === 1 ? 12 : number - 1}${letter}`;
     const next = `${number === 12 ? 1 : number + 1}${letter}`;
     const relative = `${key.n}${letter === "A" ? "B" : "A"}`;
-    read.textContent = `${current} é ${name}. Ao lado na roda: ${prev} e ${next}. O par relativo é ${relative}. Energia e ritmo vêm antes; a roda só evita um choque harmônico.`;
+    read.innerHTML = [
+      `<span class="camelot__read-part"><strong>${current}</strong> é ${name}.</span>`,
+      `<span class="camelot__read-part">Ao lado na roda: <strong>${prev}</strong> e <strong>${next}</strong>.</span>`,
+      `<span class="camelot__read-part">Par relativo: <strong>${relative}</strong>.</span>`,
+      `<span class="camelot__read-part camelot__read-part--note">Energia e ritmo vêm antes; a roda só evita um choque harmônico.</span>`,
+    ].join("");
   }
 
   paint();
