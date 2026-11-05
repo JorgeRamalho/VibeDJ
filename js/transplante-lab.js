@@ -1,9 +1,10 @@
 import { ACCEPT, decodeAudioFile, scanOverview } from "./leitura-audio-core.js";
 import { buildElementInventory, renderInventarioCards } from "./inventario-elementos.js";
 import { CHAIRS, mergeLabPacket } from "./clonagem-model.js";
-import { realizarELer } from "./realizacao-receptor.js";
-import { montarTrackRealELer } from "./montagem-receptor.js";
-import { downloadTrack } from "./export-audio.js";
+import { compassosEscolhidos, realizarELer } from "./realizacao-receptor.js";
+import { extractElementLayers, layerSourceLabel } from "./extracao-elementos.js";
+import { montarTrackRealELer, renderElementStemsForEdicao } from "./montagem-receptor.js";
+import { downloadTrack, downloadWav } from "./export-audio.js";
 
 const mount = document.querySelector("[data-transplante]");
 if (mount) boot(mount);
@@ -28,7 +29,7 @@ function boot(root) {
     <ol class="mesa-passos" aria-label="Como a mesa funciona">
       <li><b>1</b> Carregue duas tracks. As duas são doadoras.</li>
       <li><b>2</b> A mesa abre sozinha quando as duas leituras terminam.</li>
-      <li><b>3</b> Para cada órgão, retire de A, de B, ou deixe a cadeira vazia. O receptor é a track nova.</li>
+      <li><b>3</b> Para cada elemento, retire de A, de B, ou deixe a cadeira vazia. O receptor é a track nova.</li>
     </ol>
     <div class="transplante transplante--doadores">
       ${donorCard("a", "Doador A")}
@@ -46,7 +47,7 @@ function boot(root) {
         <header class="mesa-dialog__head">
           <p class="eyebrow">Mesa de operação</p>
           <h3 id="mesa-dialog-title">Receptor — track nova</h3>
-          <p class="mesa-dialog__intro">Monte a track nova órgão por órgão. Cada linha compara o mesmo papel nas duas doadoras; o centro mostra o que entrou no receptor.</p>
+          <p class="mesa-dialog__intro">Monte a track nova elemento por elemento. Cada linha compara o mesmo papel nas duas doadoras; o centro mostra o que entrou no receptor.</p>
           <label class="mesa-nome">Nome da track
             <input type="text" data-nome value="Track nova" maxlength="80" autocomplete="off">
           </label>
@@ -54,13 +55,13 @@ function boot(root) {
         <div class="mesa-body">
           <div class="mesa-matriz">
             <div class="mesa-ajuda" role="note">
-              <p><strong>Como usar:</strong> clique no card da <span class="mesa-tag mesa-tag--a">Doador A</span> ou da <span class="mesa-tag mesa-tag--b">Doador B</span> para colocar aquele órgão no receptor. Use <em>Devolver</em> no centro para deixar a cadeira vazia. O painel à direita mostra a receita ao vivo.</p>
+              <p><strong>Como usar:</strong> clique no card da <span class="mesa-tag mesa-tag--a">Doador A</span> ou da <span class="mesa-tag mesa-tag--b">Doador B</span> para colocar aquele elemento no receptor. Use <em>Devolver</em> no centro para deixar a cadeira vazia. O painel à direita mostra a receita ao vivo.</p>
             </div>
-            <div class="mesa-grade" data-grade role="region" aria-label="Matriz de transplante por órgão"></div>
+            <div class="mesa-grade" data-grade role="region" aria-label="Matriz de transplante por elemento"></div>
           </div>
           <aside class="mesa-receptor-panel" aria-labelledby="mesa-receptor-title">
             <h4 id="mesa-receptor-title">Resultado do receptor</h4>
-            <p class="mesa-receptor__lead">A lista é a receita. A leitura final gera o áudio da track nova (16 compassos, sons originais) e mede esse resultado.</p>
+            <p class="mesa-receptor__lead">A lista é a receita. A leitura final gera o áudio da track nova, no tamanho que você escolher, e mede esse resultado.</p>
             <p class="mesa-receptor__nome" data-receptor-nome></p>
             <p class="mesa-receptor__stats" data-receptor-stats aria-live="polite"></p>
             <ol class="mesa-receptor__lista" data-receptor-lista></ol>
@@ -72,7 +73,7 @@ function boot(root) {
             </details>
             <section class="mesa-leitura" aria-labelledby="mesa-leitura-title">
               <h4 id="mesa-leitura-title">Leitura final</h4>
-              <p class="mesa-leitura__lead">Montagem híbrida: anexe <strong>stems</strong> (UVR/Demucs) em cada doador; o que faltar usa filtro na mix. Gere a track, leia o resultado e baixe em WAV ou MP3. <a href="../docs/clonagem/stems-mesa-transplante.md">Guia de stems</a> · <a href="../docs/clonagem/receita-lmms.md">LMMS</a>.</p>
+              <p class="mesa-leitura__lead">Montagem híbrida: extração espectral por elemento ao carregar cada doador; stems UVR/Demucs substituem a cadeira. Gere a track, baixe a mix ou <strong>elementos em WAV</strong> para editar no LMMS. <a href="../docs/clonagem/stems-mesa-transplante.md">Guia de stems</a>.</p>
               <label class="mesa-modo">
                 Modo de construção
                 <select data-modo-montagem>
@@ -80,6 +81,15 @@ function boot(root) {
                   <option value="sintese">Track sintética — exercício (osciladores)</option>
                 </select>
               </label>
+              <label class="mesa-modo">
+                Duração da track nova
+                <select data-duracao>
+                  <option value="16" selected>16 compassos — um ciclo</option>
+                  <option value="32">32 compassos — dois ciclos</option>
+                  <option value="64">64 compassos — quatro ciclos</option>
+                </select>
+              </label>
+              <p class="mesa-leitura__lead">Cada ciclo repete a arquitetura: intro, groove, break e drop. Na montagem, o kick ataca e cala, o baixo sustenta e cede no chute, o hat fica curto e os lados se abrem.</p>
               <label class="mesa-modo">
                 Formato do arquivo
                 <select data-formato-export>
@@ -95,6 +105,7 @@ function boot(root) {
                   <button type="button" class="btn btn--ghost btn--sm" data-parar-resultado>Parar</button>
                   <button type="button" class="btn btn--ghost btn--sm" data-copiar-leitura>Copiar leitura JSON</button>
                   <button type="button" class="btn btn--ghost btn--sm" data-baixar-track hidden>Baixar track</button>
+                  <button type="button" class="btn btn--ghost btn--sm" data-baixar-elementos hidden>Baixar elementos (WAV)</button>
                 </div>
                 <canvas class="mesa-leitura__wave" data-leitura-wave width="640" height="72" aria-hidden="true"></canvas>
                 <div data-leitura-cards></div>
@@ -146,8 +157,10 @@ function boot(root) {
     leituraWrap: root.querySelector("[data-leitura-json-wrap]"),
     leituraJson: root.querySelector("[data-leitura-json]"),
     modoMontagem: root.querySelector("[data-modo-montagem]"),
+    duracao: root.querySelector("[data-duracao]"),
     formatoExport: root.querySelector("[data-formato-export]"),
     baixarTrack: root.querySelector("[data-baixar-track]"),
+    baixarElementos: root.querySelector("[data-baixar-elementos]"),
   };
 
   ui.nome.addEventListener("input", () => {
@@ -192,11 +205,12 @@ function boot(root) {
     copyText(JSON.parse(ui.leituraJson.textContent), "Leitura final copiada.");
   });
   ui.baixarTrack.addEventListener("click", () => baixarResultado());
+  ui.baixarElementos.addEventListener("click", () => baixarElementosEdicao());
   ui.receptorLista.addEventListener("click", (event) => {
     const button = event.target.closest("[data-ouvir]");
     if (!button) return;
     const side = button.dataset.ouvir;
-    if (side === "a" || side === "b") playDonorExcerpt(side, button.dataset.orgao || "");
+    if (side === "a" || side === "b") playDonorExcerpt(side, button.dataset.elemento || "");
   });
   ui.grade.addEventListener("click", (event) => {
     const button = event.target.closest("[data-origem]");
@@ -234,13 +248,20 @@ function boot(root) {
       if (!ctx) ctx = new AudioContext();
       await ctx.resume();
       const decoded = await decodeAudioFile(file, ctx);
-      status.textContent = `Separando órgãos de ${file.name}…`;
+      status.textContent = `Separando elementos de ${file.name}…`;
+      const elementLayers = await extractElementLayers(decoded.buffer, {
+        onProgress: (msg) => {
+          status.textContent = msg;
+        },
+      });
+      status.textContent = `Medindo inventário de ${file.name}…`;
       const overview = await scanOverview(decoded.mono, decoded.rate, decoded.buffer);
       const inventario = buildElementInventory({
         overview,
         mono: decoded.mono,
         rate: decoded.rate,
         duration: decoded.duration,
+        elementLayers,
       });
       inventario.arquivo = decoded.name;
       const wasReady = bothReady();
@@ -252,8 +273,9 @@ function boot(root) {
         mono: decoded.mono,
         rate: decoded.rate,
         stems: {},
-        organLayers: null,
-        organLayersDirty: true,
+        extractionBase: elementLayers,
+        elementLayers: { ...elementLayers },
+        elementLayersDirty: false,
       };
       body.hidden = false;
       body.innerHTML = donorSummary(donors[id]);
@@ -262,7 +284,7 @@ function boot(root) {
         stemsPanel.hidden = false;
         resetStemLabels(id);
       }
-      status.textContent = "Inventário pronto. Os órgãos entram na mesa.";
+      status.textContent = "Inventário pronto. Os elementos entram na mesa.";
       const readyNow = bothReady();
       syncChrome();
       publish();
@@ -298,8 +320,8 @@ function boot(root) {
     ui.receptorNome.textContent = nome;
     ui.receptorStats.textContent =
       filled === 0
-        ? "Nenhum órgão no receptor ainda. Escolha cards na matriz à esquerda."
-        : `${filled} de ${CHAIRS.length} órgãos definidos · ${counts.a} de A · ${counts.b} de B · ${counts.vazio} vazios.`;
+        ? "Nenhum elemento no receptor ainda. Escolha cards na matriz à esquerda."
+        : `${filled} de ${CHAIRS.length} elementos definidos · ${counts.a} de A · ${counts.b} de B · ${counts.vazio} vazios.`;
     ui.resumo.textContent = `${nome}: ${counts.a} de A · ${counts.b} de B · ${counts.vazio} cadeiras vazias.`;
     ui.receptorLista.innerHTML = CHAIRS.map((chair) => receptorItemHtml(chair)).join("");
     ui.receptorJson.textContent = JSON.stringify(documentReceita(), null, 2);
@@ -320,43 +342,45 @@ function boot(root) {
     const origem = receita[chair.id];
     if (!origem) {
       return `<li class="mesa-receptor-item mesa-receptor-item--vazio">
-        <span class="mesa-receptor-item__orgao">${chair.label}</span>
+        <span class="mesa-receptor-item__elemento">${chair.label}</span>
         <span class="mesa-receptor-item__origem">Vazio</span>
         <span class="mesa-receptor-item__leitura">Cadeira ainda não preenchida na track nova.</span>
       </li>`;
     }
     const el = donors[origem].inventario.elementos[chair.id];
+    const layer = donors[origem].elementLayers?.[chair.id];
+    const fonte = layerSourceLabel(layer);
     const tag = origem === "a" ? "Doador A" : "Doador B";
     const donorFile = shortFileName(donors[origem].name);
     return `<li class="mesa-receptor-item mesa-receptor-item--${origem}">
-      <span class="mesa-receptor-item__orgao">${chair.label}</span>
-      <span class="mesa-receptor-item__origem">${tag} · ${donorFile}</span>
+      <span class="mesa-receptor-item__elemento">${chair.label}</span>
+      <span class="mesa-receptor-item__origem">${tag} · ${donorFile} · ${fonte}</span>
       <span class="mesa-receptor-item__leitura">${el.leitura}</span>
-      <button type="button" class="mesa-ouvir" data-ouvir="${origem}" data-orgao="${chair.id}">Ouvir trecho da mix do ${tag}</button>
+      <button type="button" class="mesa-ouvir" data-ouvir="${origem}" data-elemento="${chair.id}">Ouvir trecho da mix do ${tag}</button>
     </li>`;
   }
 
   function rowHtml(chair) {
     const chosen = receita[chair.id];
-    const rowLabel = `Órgão ${chair.label}`;
+    const rowLabel = `Elemento ${chair.label}`;
     return `<section class="mesa-row" role="group" aria-label="${rowLabel}">
-      ${organButton("a", chair, chosen)}
+      ${elementButton("a", chair, chosen)}
       <div class="mesa-leito ${chosen ? "is-filled" : ""}" aria-live="polite">
         <strong>${chair.label}</strong>
         <span>${leitoLabel(chair.id, chosen)}</span>
         <button type="button" class="mesa-limpar" data-origem="vazio" data-elemento="${chair.id}" ${chosen ? "" : "disabled"} aria-label="${chosen ? `Devolver ${chair.label} ao vazio no receptor` : `Nada a devolver em ${chair.label}`}">Devolver</button>
       </div>
-      ${organButton("b", chair, chosen)}
+      ${elementButton("b", chair, chosen)}
     </section>`;
   }
 
-  function organButton(side, chair, chosen) {
+  function elementButton(side, chair, chosen) {
     const el = donors[side].inventario.elementos[chair.id];
     const active = chosen === side;
     const donorLabel = side === "a" ? "Doador A" : "Doador B";
     const action = active ? "já está no receptor" : "colocar no receptor";
     const aria = `${chair.label} · ${donorLabel} (${shortFileName(donors[side].name)}): ${el.leitura}. ${active ? "Pressione para trocar de origem." : `Pressione para ${action}.`}`;
-    return `<button type="button" class="mesa-orgao mesa-orgao--${side} mesa-orgao--${el.presenca}${active ? " is-retirado" : ""}" data-origem="${side}" data-elemento="${chair.id}" aria-pressed="${active}" aria-label="${escapeAttr(aria)}">
+    return `<button type="button" class="mesa-elemento mesa-elemento--${side} mesa-elemento--${el.presenca}${active ? " is-retirado" : ""}" data-origem="${side}" data-elemento="${chair.id}" aria-pressed="${active}" aria-label="${escapeAttr(aria)}">
       <b>${el.rotulo}</b>
       <small>${donorLabel} · ${el.presenca} · ${el.confianca}%</small>
       <span>${active ? "No receptor" : "Retirar para o receptor"}</span>
@@ -395,7 +419,7 @@ function boot(root) {
   async function gerarLeituraFinal() {
     const counts = countOrigens();
     if (counts.a + counts.b === 0) {
-      ui.leituraStatus.textContent = "Escolha ao menos um órgão na matriz antes de gerar a track.";
+      ui.leituraStatus.textContent = "Escolha ao menos um elemento na matriz antes de gerar a track.";
       return;
     }
     leituraBusy = true;
@@ -406,13 +430,14 @@ function boot(root) {
     try {
       if (!ctx) ctx = new AudioContext();
       const modo = ui.modoMontagem.value;
+      const compassos = compassosEscolhidos(ui.duracao.value);
       const onProgress = (msg) => {
         ui.leituraStatus.textContent = msg;
       };
       const rendered =
         modo === "montagem"
-          ? await montarTrackRealELer({ nome, receita, donors, onProgress })
-          : await realizarELer({ nome, receita, donors });
+          ? await montarTrackRealELer({ nome, receita, donors, compassos, onProgress })
+          : await realizarELer({ nome, receita, donors, compassos });
       resultBuffer = rendered.buffer;
       resultSignature = recipeSignature();
       ui.leituraJson.textContent = JSON.stringify(rendered.leitura, null, 2);
@@ -420,10 +445,11 @@ function boot(root) {
       ui.leituraPlayer.hidden = false;
       ui.leituraWrap.hidden = false;
       ui.baixarTrack.hidden = false;
+      ui.baixarElementos.hidden = modo !== "montagem";
       drawWave(ui.leituraWave, rendered.buffer);
       const rotulo = modo === "montagem" ? "Track montada" : "Track sintética";
       const fmt = ui.formatoExport.value.toUpperCase();
-      ui.leituraStatus.textContent = `${rotulo} · ${nome}: ${rendered.leitura.bpm_usado} BPM · ${rendered.leitura.duracao_segundos} s. Pronto para baixar em ${fmt}.`;
+      ui.leituraStatus.textContent = `${rotulo} · ${nome}: ${rendered.leitura.bpm_usado} BPM · ${rendered.leitura.duracao_compassos} compassos · ${rendered.leitura.duracao_segundos} s. Pronto para baixar em ${fmt}.`;
     } catch (err) {
       ui.leituraStatus.textContent = err instanceof Error ? err.message : "Falha ao gerar a track.";
     } finally {
@@ -445,13 +471,58 @@ function boot(root) {
     }
   }
 
+  async function baixarElementosEdicao() {
+    const counts = countOrigens();
+    if (counts.a + counts.b === 0) {
+      ui.leituraStatus.textContent = "Monte a receita com ao menos um elemento antes de exportar.";
+      return;
+    }
+    if (ui.modoMontagem.value !== "montagem") {
+      ui.leituraStatus.textContent = "Elementos em WAV só no modo track montada.";
+      return;
+    }
+    leituraBusy = true;
+    ui.baixarElementos.disabled = true;
+    try {
+      const compassos = compassosEscolhidos(ui.duracao.value);
+      const safe = nome.replace(/[^\w\-]+/g, "_").slice(0, 32) || "track-nova";
+      const stems = await renderElementStemsForEdicao({
+        receita,
+        donors,
+        compassos,
+        onProgress: (msg) => {
+          ui.leituraStatus.textContent = msg;
+        },
+      });
+      let index = 0;
+      for (const chair of CHAIRS) {
+        const buffer = stems[chair.id];
+        if (!buffer) continue;
+        index += 1;
+        downloadWav(buffer, `${safe}_${chair.id}.wav`);
+        await wait(120);
+      }
+      ui.leituraStatus.textContent =
+        index > 0
+          ? `${index} WAV(s) da track nova (${compassos} compassos). Importe no LMMS, um elemento por faixa.`
+          : "Nenhum elemento na receita para exportar.";
+    } catch (err) {
+      ui.leituraStatus.textContent = err instanceof Error ? err.message : "Falha ao exportar elementos.";
+    } finally {
+      leituraBusy = false;
+      ui.baixarElementos.disabled = false;
+    }
+  }
+
   async function loadStem(donorId, chairId, input) {
     const file = input.files?.[0];
     const label = root.querySelector(`[data-stem-label-${donorId}-${chairId}]`);
     if (!file) {
       delete donors[donorId].stems[chairId];
       if (label) label.textContent = "Nenhum";
-      donors[donorId].organLayersDirty = true;
+      if (donors[donorId].extractionBase?.[chairId] && donors[donorId].elementLayers) {
+        donors[donorId].elementLayers[chairId] = donors[donorId].extractionBase[chairId];
+      }
       return;
     }
     if (label) label.textContent = `Lendo ${file.name}…`;
@@ -463,7 +534,13 @@ function boot(root) {
         rate: decoded.rate,
         name: decoded.name,
       };
-      donors[donorId].organLayersDirty = true;
+      if (!donors[donorId].elementLayers) donors[donorId].elementLayers = {};
+      donors[donorId].elementLayers[chairId] = {
+        mono: decoded.mono,
+        rate: decoded.rate,
+        source: "stem",
+        qualidade: 100,
+      };
       if (label) label.textContent = shortFileName(decoded.name);
     } catch (err) {
       delete donors[donorId].stems[chairId];
@@ -521,7 +598,7 @@ function boot(root) {
     pen.stroke();
   }
 
-  async function playDonorExcerpt(side, orgaoId) {
+  async function playDonorExcerpt(side, elementId) {
     const slot = donors[side];
     if (!slot.buffer || !ctx) return;
     stopPreview();
@@ -538,9 +615,9 @@ function boot(root) {
       paintReceptorPanel();
     };
     previewSource.start(0, start, len);
-    const orgao = CHAIRS.find((c) => c.id === orgaoId);
-    const label = orgao ? orgao.label : "mix";
-    previewStatus = `Tocando ~${Math.round(len)} s da mix do ${side === "a" ? "Doador A" : "Doador B"} (trecho de referência para ${label}; não isola o órgão).`;
+    const found = CHAIRS.find((c) => c.id === elementId);
+    const label = found ? found.label : "mix";
+    previewStatus = `Tocando ~${Math.round(len)} s da mix do ${side === "a" ? "Doador A" : "Doador B"} (trecho de referência para ${label}; não isola o elemento).`;
     paintReceptorPanel();
   }
 
@@ -571,10 +648,12 @@ function boot(root) {
       tipo: "track-nova-transplante",
       versao: 1,
       nome,
-      aviso: "Receita de papéis. O áudio do receptor não existe ainda: cada órgão marca de qual doador veio a função. O som final é recriado por você.",
+      duracao_compassos: compassosEscolhidos(ui.duracao.value),
+      mapa: "Ciclos de 16 compassos: intro, groove, break, drop.",
+      aviso: "Receita de papéis. O áudio do receptor não existe ainda: cada elemento marca de qual doador veio a função. O som final é recriado por você.",
       doador_a: donorMeta("a"),
       doador_b: donorMeta("b"),
-      orgaos: Object.fromEntries(
+      elementos: Object.fromEntries(
         CHAIRS.map((chair) => {
           const origem = receita[chair.id];
           const fonte = origem ? donors[origem].inventario.elementos[chair.id] : null;
@@ -638,7 +717,7 @@ function donorCard(id, title) {
   return `<article class="transplante-slot transplante-slot--${id}">
     <header>
       <p class="eyebrow">${title}</p>
-      <h3>Órgãos desta track</h3>
+      <h3>Elementos desta track</h3>
       <p class="transplante-slot__hint">Kick, clap, hi-hat, baixo, stab e o resto saem daqui para a mesa.</p>
     </header>
     <label class="drop" data-drop-${id}>
@@ -649,7 +728,7 @@ function donorCard(id, title) {
     <div data-body-${id} hidden></div>
     <details class="stems-panel" data-stems-${id} hidden>
       <summary>Stems UVR/Demucs (opcional)</summary>
-      <p class="stems-panel__hint">Anexe um áudio por cadeira. Na montagem, stem substitui o filtro na mix para esse órgão.</p>
+      <p class="stems-panel__hint">Substituem a extração automática da cadeira. Ideal para edição fina no LMMS.</p>
       <ul class="stems-list">${stemRows}</ul>
     </details>
   </article>`;
@@ -674,9 +753,14 @@ function emptyDonor() {
     mono: null,
     rate: 0,
     stems: {},
-    organLayers: null,
-    organLayersDirty: true,
+    extractionBase: null,
+    elementLayers: null,
+    elementLayersDirty: true,
   };
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function bindDrop(label, onFile) {

@@ -1,5 +1,5 @@
 /**
- * Realização audível da track nova: 16 compassos sintetizados a partir da receita.
+ * Realização audível da track nova: ciclos de 16 compassos sintetizados a partir da receita.
  * O som é original (não usa samples das doadoras). A leitura mede esse áudio.
  */
 
@@ -7,8 +7,15 @@ import { CHAIRS } from "./clonagem-model.js";
 import { buildElementInventory } from "./inventario-elementos.js";
 import { mixdown, scanOverview } from "./leitura-audio-core.js";
 
-const BARS = 16;
+const FORM_BARS = 16;
 const STEPS = 16;
+
+/** @param {unknown} value */
+export function compassosEscolhidos(value) {
+  const bars = Number(value);
+  if (bars === 32 || bars === 64) return bars;
+  return FORM_BARS;
+}
 
 const SECTIONS = [
   { id: "intro", start: 0, bars: 4 },
@@ -49,7 +56,8 @@ export function bpmDaReceita(receita, donors) {
  */
 export async function realizarELer(input) {
   const bpm = bpmDaReceita(input.receita, input.donors);
-  const buffer = await renderTrack(input.receita, bpm);
+  const bars = compassosEscolhidos(input.compassos);
+  const buffer = await renderTrack(input.receita, bpm, bars);
   const mono = mixdown(buffer);
   const overview = await scanOverview(mono, buffer.sampleRate, buffer);
   const inventario = buildElementInventory({
@@ -64,10 +72,13 @@ export async function realizarELer(input) {
     versao: 1,
     nome: input.nome,
     bpm_usado: bpm,
+    duracao_compassos: bars,
+    ciclos: bars / FORM_BARS,
+    mapa: "Cada ciclo: intro (4) · groove (4) · break (4) · drop (4).",
     duracao_segundos: Math.round(buffer.duration * 100) / 100,
     aviso:
-      "Áudio novo, sintetizado neste navegador a partir da receita (quais órgãos entraram e se vieram de A ou de B). Não contém trechos das mixes doadoras. O inventário abaixo foi medido nesse áudio.",
-    orgaos_na_receita: Object.fromEntries(
+      "Áudio novo, sintetizado neste navegador a partir da receita (quais elementos entraram e se vieram de A ou de B). Não contém trechos das mixes doadoras. O inventário abaixo foi medido nesse áudio.",
+    elementos_na_receita: Object.fromEntries(
       CHAIRS.map((chair) => [chair.id, input.receita[chair.id] ? (input.receita[chair.id] === "a" ? "doador_a" : "doador_b") : "vazio"]),
     ),
     inventario,
@@ -79,20 +90,27 @@ export async function realizarELer(input) {
  * @param {Record<string, "a" | "b" | null>} receita
  * @param {number} bpm
  */
-async function renderTrack(receita, bpm) {
+async function renderTrack(receita, bpm, bars) {
   const step = 60 / bpm / 4;
-  const seconds = BARS * STEPS * step + 0.8;
+  const seconds = bars * STEPS * step + 1.2;
   const rate = 44100;
   const offline = new OfflineAudioContext(1, Math.ceil(seconds * rate), rate);
   const master = offline.createGain();
-  master.gain.value = 0.45;
-  master.connect(offline.destination);
+  const comp = offline.createDynamicsCompressor();
+  master.gain.value = 0.5;
+  comp.threshold.value = -16;
+  comp.knee.value = 6;
+  comp.ratio.value = 2.5;
+  comp.attack.value = 0.004;
+  comp.release.value = 0.14;
+  master.connect(comp);
+  comp.connect(offline.destination);
   const noise = offline.createBuffer(1, rate, rate);
   const noiseData = noise.getChannelData(0);
   for (let index = 0; index < noiseData.length; index += 1) noiseData[index] = Math.random() * 2 - 1;
   const audio = { ctx: offline, master, noise };
 
-  for (let bar = 0; bar < BARS; bar += 1) {
+  for (let bar = 0; bar < bars; bar += 1) {
     const section = sectionOf(bar);
     for (let stepIndex = 0; stepIndex < STEPS; stepIndex += 1) {
       const time = (bar * STEPS + stepIndex) * step;
@@ -108,7 +126,8 @@ async function renderTrack(receita, bpm) {
 }
 
 function sectionOf(bar) {
-  const found = SECTIONS.find((section) => bar >= section.start && bar < section.start + section.bars);
+  const local = ((bar % FORM_BARS) + FORM_BARS) % FORM_BARS;
+  const found = SECTIONS.find((section) => local >= section.start && local < section.start + section.bars);
   if (!found) throw new Error("Compasso fora do mapa");
   return found;
 }
@@ -145,11 +164,11 @@ function voiceFor(chairId, side) {
 }
 
 function plays(chairId, sectionId, side, bar, step) {
-  return organActiveAtStep(chairId, sectionId, side, bar, step);
+  return elementActiveAtStep(chairId, sectionId, side, bar, step);
 }
 
 /** Grade rítmica compartilhada (síntese e montagem). */
-export function organActiveAtStep(chairId, sectionId, side, bar, step) {
+export function elementActiveAtStep(chairId, sectionId, side, bar, step) {
   if (!inSection(chairId, sectionId)) return false;
   if (chairId === "fx") return fxDue(voiceFor(chairId, side), bar, step);
   return stepsFor(chairId, voiceFor(chairId, side)).includes(step);
@@ -173,11 +192,12 @@ function inSection(chairId, sectionId) {
 }
 
 function fxDue(voice, bar, step) {
+  const local = ((bar % FORM_BARS) + FORM_BARS) % FORM_BARS;
   switch (voice) {
     case "riser":
-      return bar === 10 && step === 0;
+      return local === 10 && step === 0;
     case "impact":
-      return bar === 12 && step === 0;
+      return local === 12 && step === 0;
     default: {
       const unknown = voice;
       throw new Error(unknown);

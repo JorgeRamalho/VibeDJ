@@ -11,8 +11,8 @@ Campos úteis da receita (`tipo: track-nova-transplante`):
 | `nome` | Nome do projeto |
 | `doador_a.arquivo` / `doador_b.arquivo` | Referência muda (volume baixo) |
 | `doador_a.bpm_estimado` | Tempo do projeto (média com B se diferir) |
-| `orgaos.<id>.origem` | `doador_a`, `doador_b` ou `vazio` |
-| `orgaos.<id>.leitura` | Nota na faixa (o que aquele papel fazia na origem) |
+| `elementos.<id>.origem` | `doador_a`, `doador_b` ou `vazio` |
+| `elementos.<id>.leitura` | Nota na faixa (o que aquele papel fazia na origem) |
 
 IDs de cadeira: `kick`, `clap`, `hat`, `bass`, `stab`, `fx`, `perc`, `vocal`.
 

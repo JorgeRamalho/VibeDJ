@@ -1,3 +1,7 @@
+import { CHAIRS } from "./clonagem-model.js";
+import { estimateMusicalKeyFromMono } from "./camelot-key.js";
+import { downloadBlob, encodeMp3Blob, encodeWavBlob } from "./export-audio.js";
+import { extractElementLayers } from "./extracao-elementos.js";
 import { buildElementInventory, renderInventarioCards } from "./inventario-elementos.js";
 
 const ACCEPT = "audio/*,.mp3,.wav,.wave,.flac,.ogg,.oga,.m4a,.aac,.aiff,.aif,.webm";
@@ -33,6 +37,9 @@ function boot(root) {
     frame: 0,
     job: 0,
     inventario: null,
+    elementLayers: null,
+    elementExtractPromise: null,
+    wavBusy: false,
   };
 
   root.innerHTML = renderShell();
@@ -70,6 +77,9 @@ function boot(root) {
   ui.play.addEventListener("click", () => playOriginal(state.excerptStart));
   ui.stop.addEventListener("click", () => halt());
   ui.copy.addEventListener("click", () => copyReport());
+  ui.baixarElementos.addEventListener("click", () => {
+    void downloadAllElements();
+  });
   root.querySelectorAll("[data-layer]").forEach((button) => {
     button.addEventListener("click", () => playLayer(button.dataset.layer));
   });
@@ -85,7 +95,9 @@ function boot(root) {
     state.name = file.name;
     halt();
     state.layers.clear();
+    state.elementLayers = null;
     paintLayers();
+    syncBaixarButton();
     ui.result.hidden = true;
     if (file.size > MAX_BYTES) {
       say(`Este arquivo tem ${mb(file.size)} MB. O limite desta leitura é ${mb(MAX_BYTES)} MB.`);
@@ -106,6 +118,7 @@ function boot(root) {
       state.peaks = peaksOf(state.mono, 1600);
       ui.file.textContent = state.name;
       ui.result.hidden = false;
+      syncBaixarButton();
       fillFacts({
         duration: formatTime(audio.duration),
         rate: `${audio.sampleRate} Hz`,
@@ -119,6 +132,9 @@ function boot(root) {
       }, mine);
       if (mine !== state.job || !overview) return;
       state.overview = overview;
+      const key = await readKey(state.mono, audio.sampleRate, mine);
+      if (mine !== state.job) return;
+      state.overview = { ...overview, key };
       fillFacts({
         duration: formatTime(audio.duration),
         rate: `${audio.sampleRate} Hz`,
@@ -127,18 +143,18 @@ function boot(root) {
       });
       ui.centroid.textContent = overview.centroid ? `${Math.round(overview.centroid)} Hz` : "—";
       ui.width.textContent = audio.numberOfChannels > 1 ? `${Math.round(overview.side * 100)}%` : "Mono";
+      paintKey(state.overview.key);
       paintShares(ui.bands, overview.bands, "is-copper");
       paintShares(ui.image, [
         { id: "centro", label: "Centro", share: 1 - overview.side },
         { id: "lados", label: "Lados", share: overview.side },
       ], "");
       paintInventario();
-      const analisePayload = report();
-      ui.report.textContent = JSON.stringify(analisePayload, null, 2);
-      window.__vibedjLastAnalise = analisePayload;
-      window.dispatchEvent(new CustomEvent("vibedj:analise", { detail: analisePayload }));
-      say(overview.bpm ? `Andamento estimado: ${overview.bpm.toFixed(1)} BPM. ${overview.note}` : overview.note);
+      publishReport();
+      say(keyLine(state.overview));
       drawWave();
+      await extractElements(mine);
+      if (mine !== state.job) return;
       await separateExcerpt();
     } catch {
       if (mine !== state.job) return;
@@ -218,6 +234,14 @@ function boot(root) {
       bands,
       side,
     };
+  }
+
+  async function readKey(mono, rate, mine) {
+    say("Lendo tonalidade para mix in key…");
+    const key = await estimateMusicalKeyFromMono(mono, rate, (ratio) => {
+      if (mine === state.job) say(`Tonalidade (Camelot)… ${Math.round(ratio * 100)}%`);
+    });
+    return key;
   }
 
   async function separateExcerpt() {
@@ -453,6 +477,137 @@ function boot(root) {
     ui.bpm.textContent = facts.bpm;
   }
 
+  async function extractElements(mine) {
+    if (!state.buffer) return;
+    if (state.elementLayers && CHAIRS.some((chair) => state.elementLayers[chair.id])) return;
+    if (state.elementExtractPromise) {
+      await state.elementExtractPromise;
+      return;
+    }
+    state.elementExtractPromise = (async () => {
+      say(`Separando elementos de ${state.name}…`);
+      try {
+        const layers = await extractElementLayers(state.buffer, {
+          onProgress: (msg) => say(msg),
+          job: { id: mine },
+        });
+        state.elementLayers = layers;
+        paintInventario();
+        syncBaixarButton();
+        publishReport();
+        const count = CHAIRS.filter((chair) => layers[chair.id]).length;
+        say(`${count} elementos separados. Use Baixar elementos da track para gravar todos em ${exportFormat().toUpperCase()}.`);
+      } catch (err) {
+        state.elementLayers = null;
+        syncBaixarButton();
+        say(err instanceof Error ? err.message : "Falha ao separar os elementos.");
+      } finally {
+        state.elementExtractPromise = null;
+      }
+    })();
+    await state.elementExtractPromise;
+  }
+
+  function syncBaixarButton() {
+    ui.baixarElementos.disabled = !state.buffer || state.wavBusy;
+  }
+
+  function exportFormat() {
+    return ui.formato.value === "mp3" ? "mp3" : "wav";
+  }
+
+  async function ensureElementLayersForExport() {
+    if (state.elementLayers && CHAIRS.some((chair) => state.elementLayers[chair.id])) return true;
+    if (!state.buffer) return false;
+    say("Separando todos os elementos antes do download…");
+    await extractElements(state.job);
+    return Boolean(state.elementLayers && CHAIRS.some((chair) => state.elementLayers[chair.id]));
+  }
+
+  async function downloadAllElements() {
+    if (!state.buffer) {
+      say("Abra um arquivo de áudio primeiro.");
+      return;
+    }
+    if (state.wavBusy) return;
+    const format = exportFormat();
+    state.wavBusy = true;
+    syncBaixarButton();
+    try {
+      const ok = await ensureElementLayersForExport();
+      if (!ok) {
+        say("Não foi possível separar os elementos para download.");
+        return;
+      }
+      const ready = CHAIRS.filter((chair) => state.elementLayers[chair.id]);
+      const base = safeBase(state.name);
+      /** @type {{ filename: string, blob: Blob }[]} */
+      const files = [];
+      for (let index = 0; index < ready.length; index += 1) {
+        const chair = ready[index];
+        const buffer = layerToBuffer(ensureCtx(), state.elementLayers[chair.id]);
+        const filename = `${base}_${chair.id}.${format === "mp3" ? "mp3" : "wav"}`;
+        say(format === "mp3"
+          ? `Codificando ${index + 1} de ${ready.length}: ${chair.label}…`
+          : `Preparando ${index + 1} de ${ready.length}: ${chair.label}…`);
+        const blob = format === "mp3" ? await encodeMp3Blob(buffer) : encodeWavBlob(buffer);
+        files.push({ filename, blob });
+        await wait(0);
+      }
+      say(`Baixando ${files.length} arquivo(s)…`);
+      for (let index = 0; index < files.length; index += 1) {
+        downloadBlob(files[index].blob, files[index].filename);
+        if (index < files.length - 1) await wait(500);
+      }
+      say(`${files.length} ${format.toUpperCase()}(s) da track. Um arquivo por elemento.`);
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Falha ao exportar os elementos.");
+    } finally {
+      state.wavBusy = false;
+      syncBaixarButton();
+    }
+  }
+
+  function keyLine(overview) {
+    const parts = [];
+    if (overview.bpm) parts.push(`Andamento estimado: ${overview.bpm.toFixed(1)} BPM`);
+    else if (overview.note) parts.push(overview.note);
+    const key = overview.key;
+    if (key?.camelot) {
+      parts.push(`Tonalidade estimada: ${key.camelot} (${key.nome}, ${key.confianca}% de confiança)`);
+    } else if (key?.nota) parts.push(key.nota);
+    return parts.join(". ") || "Leitura pronta.";
+  }
+
+  function paintKey(key) {
+    if (!ui.keyLabel || !ui.camelotCode) return;
+    if (!key?.camelot) {
+      ui.keyLabel.textContent = "—";
+      ui.camelotCode.textContent = "—";
+      if (ui.keyConf) ui.keyConf.textContent = "—";
+      if (ui.keyMeta) {
+        ui.keyMeta.hidden = true;
+        ui.keyMeta.textContent = "";
+      }
+      return;
+    }
+    ui.keyLabel.textContent = key.nome;
+    ui.camelotCode.textContent = key.camelot;
+    if (ui.keyConf) ui.keyConf.textContent = `${key.confianca}%`;
+    if (ui.keyMeta) {
+      ui.keyMeta.hidden = false;
+      const alt = key.alternativa ? ` Alternativa próxima: ${key.alternativa.camelot} (${key.alternativa.nome}).` : "";
+      ui.keyMeta.textContent = `Vizinhos na roda: ${key.vizinhos.join(" · ")} · relativo ${key.relativo}.${alt} ${key.nota}`;
+    }
+  }
+
+  function publishReport() {
+    const analisePayload = report();
+    ui.report.textContent = JSON.stringify(analisePayload, null, 2);
+    window.__vibedjLastAnalise = analisePayload;
+    window.dispatchEvent(new CustomEvent("vibedj:analise", { detail: analisePayload }));
+  }
+
   function paintInventario() {
     if (!state.overview || !state.mono) return;
     state.inventario = buildElementInventory({
@@ -461,11 +616,12 @@ function boot(root) {
       rate: state.buffer.sampleRate,
       duration: state.duration,
       layers: state.layers.size ? state.layers : null,
+      elementLayers: state.elementLayers,
     });
     if (ui.inventarioWrap) {
       ui.inventarioWrap.hidden = false;
       ui.inventarioWrap.innerHTML = `<h3>Inventário por elemento</h3>
-        <p class="lab-caption">Kick, clap, hi-hat, baixo, stab, transição, percussão e vocal — estimativa ao decodificar. Refine ouvindo o trecho separado.</p>
+        <p class="lab-caption">Kick, clap, hi-hat, baixo, stab, transição, percussão e vocal / chop, separados um a um. Baixar elementos da track grava cada cadeira em WAV ou MP3.</p>
         ${renderInventarioCards(state.inventario)}`;
     }
   }
@@ -480,10 +636,19 @@ function boot(root) {
       amostragem_hz: state.buffer ? state.buffer.sampleRate : 0,
       canais: state.buffer ? state.buffer.numberOfChannels : 0,
       bpm_estimado: overview.bpm ? round(overview.bpm, 1) : null,
+      tonalidade_camelot: overview.key || null,
       centroide_hz: overview.centroid ? Math.round(overview.centroid) : null,
       lados_energia: overview.side != null ? round(overview.side, 3) : null,
       faixas: overview.bands || [],
       inventario_elementos: state.inventario,
+      elementos_wav: state.elementLayers
+        ? Object.fromEntries(
+            CHAIRS.map((chair) => {
+              const layer = state.elementLayers[chair.id];
+              return [chair.id, layer ? { fonte: layer.source, qualidade: layer.qualidade ?? null } : null];
+            }),
+          )
+        : null,
       trecho: {
         inicio_segundos: round(state.excerptStart, 2),
         duracao_segundos: state.excerptSeconds,
@@ -541,6 +706,12 @@ function renderShell() {
         <p><span>Brilho</span><strong data-centroid>—</strong></p>
         <p><span>Lados</span><strong data-width>—</strong></p>
       </div>
+      <div class="analise-facts analise-facts--key">
+        <p><span>Tonalidade</span><strong data-key-label>—</strong></p>
+        <p><span>Camelot</span><strong data-camelot>—</strong></p>
+        <p><span>Confiança</span><strong data-key-conf>—</strong></p>
+      </div>
+      <p class="lab-caption analise-key-meta" data-key-meta hidden></p>
       <canvas class="analise-canvas analise-canvas--wave" data-wave width="1600" height="180" aria-label="Forma de onda. Clique para escolher o início do trecho."></canvas>
       <p class="lab-caption" data-window></p>
       <canvas class="analise-canvas analise-canvas--spec" data-spec width="840" height="280" aria-label="Espectrograma. Grave embaixo, agudo em cima."></canvas>
@@ -563,6 +734,13 @@ function renderShell() {
         <button type="button" class="btn btn--acid" data-read>Ler este trecho</button>
         <button type="button" class="btn btn--ghost" data-play disabled>Ouvir arquivo</button>
         <button type="button" class="btn btn--ghost" data-stop>Parar</button>
+        <label>Formato
+          <select data-formato-export>
+            <option value="wav" selected>WAV (sem perda)</option>
+            <option value="mp3">MP3 (192 kbps)</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn--ghost" data-baixar-elementos-track disabled>Baixar elementos da track</button>
       </div>
       <div class="layer-grid">${layers}</div>
       <p class="lab-caption">Centro e lados vêm do estéreo. Percussivo e harmônico separam ataque de nota. As faixas cortam o espectro. Nenhuma delas é o kick, o baixo ou o vocal isolados da sessão.</p>
@@ -586,6 +764,10 @@ function bind(root) {
     bpm: root.querySelector("[data-bpm]"),
     centroid: root.querySelector("[data-centroid]"),
     width: root.querySelector("[data-width]"),
+    keyLabel: root.querySelector("[data-key-label]"),
+    camelotCode: root.querySelector("[data-camelot]"),
+    keyConf: root.querySelector("[data-key-conf]"),
+    keyMeta: root.querySelector("[data-key-meta]"),
     wave: root.querySelector("[data-wave]"),
     spec: root.querySelector("[data-spec]"),
     window: root.querySelector("[data-window]"),
@@ -599,7 +781,28 @@ function bind(root) {
     report: root.querySelector("[data-report]"),
     copy: root.querySelector("[data-copy]"),
     inventarioWrap: root.querySelector("[data-inventario-wrap]"),
+    formato: root.querySelector("[data-formato-export]"),
+    baixarElementos: root.querySelector("[data-baixar-elementos-track]"),
   };
+}
+
+function layerToBuffer(ctx, layer) {
+  const mono = layer.mono;
+  let peak = 0;
+  for (let index = 0; index < mono.length; index += 1) peak = Math.max(peak, Math.abs(mono[index]));
+  const gain = peak > 0.98 ? 0.98 / peak : 1;
+  const buffer = ctx.createBuffer(1, mono.length, layer.rate);
+  const channel = buffer.getChannelData(0);
+  if (gain === 1) channel.set(mono);
+  else {
+    for (let index = 0; index < mono.length; index += 1) channel[index] = mono[index] * gain;
+  }
+  return buffer;
+}
+
+function safeBase(name) {
+  const stem = String(name || "leitura").replace(/\.[^.]+$/, "");
+  return stem.replace(/[^\w\-]+/g, "_").slice(0, 40) || "leitura";
 }
 
 function mixdown(buffer) {

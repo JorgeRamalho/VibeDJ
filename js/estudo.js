@@ -1,8 +1,12 @@
+import { activateLessonEmbed, initSalaReferencias } from "./sala-referencias.js";
+
 const STORAGE = "vibedj.estudo.v1";
 
 const study = document.querySelector("[data-study]");
 
 if (study) {
+  initSalaReferencias(study);
+
   const opens = [...study.querySelectorAll("[data-open]")];
   const panels = [...study.querySelectorAll("[data-lesson-panel]")];
   const checks = [...study.querySelectorAll("[data-check]")];
@@ -44,6 +48,7 @@ if (study) {
     panels.forEach((panel) => {
       panel.classList.toggle("is-on", panel.dataset.lessonPanel === next);
     });
+    activateLessonEmbed(next);
     if (fromUser) {
       history.replaceState(null, "", `#${next}`);
       const heading = study.querySelector(`[data-lesson-panel="${next}"] h2`);

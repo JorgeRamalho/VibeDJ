@@ -14,14 +14,23 @@ export async function downloadTrack(buffer, baseName, format) {
   downloadWav(buffer, `${safe}.wav`);
 }
 
-/** @param {AudioBuffer} buffer @param {string} filename */
-export function downloadWav(buffer, filename) {
-  const blob = new Blob([encodeWav(buffer)], { type: "audio/wav" });
-  triggerDownload(blob, filename.endsWith(".wav") ? filename : `${filename}.wav`);
+/** @param {AudioBuffer} buffer */
+export function encodeWavBlob(buffer) {
+  return new Blob([encodeWav(buffer)], { type: "audio/wav" });
 }
 
-/** @param {AudioBuffer} buffer @param {string} filename @param {number} kbps */
-export async function downloadMp3(buffer, filename, kbps = 192) {
+/** @param {Blob} blob @param {string} filename */
+export function downloadBlob(blob, filename) {
+  triggerDownload(blob, filename);
+}
+
+/** @param {AudioBuffer} buffer @param {string} filename */
+export function downloadWav(buffer, filename) {
+  downloadBlob(encodeWavBlob(buffer), filename.endsWith(".wav") ? filename : `${filename}.wav`);
+}
+
+/** @param {AudioBuffer} buffer @param {number} kbps */
+export async function encodeMp3Blob(buffer, kbps = 192) {
   const lame = await loadLame();
   const channels = buffer.numberOfChannels;
   const rate = buffer.sampleRate;
@@ -39,8 +48,13 @@ export async function downloadMp3(buffer, filename, kbps = 192) {
   }
   const tail = encoder.flush();
   if (tail.length > 0) chunks.push(new Uint8Array(tail));
-  const blob = new Blob(chunks, { type: "audio/mpeg" });
-  triggerDownload(blob, filename.endsWith(".mp3") ? filename : `${filename}.mp3`);
+  return new Blob(chunks, { type: "audio/mpeg" });
+}
+
+/** @param {AudioBuffer} buffer @param {string} filename @param {number} kbps */
+export async function downloadMp3(buffer, filename, kbps = 192) {
+  const blob = await encodeMp3Blob(buffer, kbps);
+  downloadBlob(blob, filename.endsWith(".mp3") ? filename : `${filename}.mp3`);
 }
 
 /** @returns {Promise<{ Mp3Encoder: new (ch: number, rate: number, kbps: number) => { encodeBuffer: Function, flush: Function } }>} */
@@ -126,6 +140,9 @@ function triggerDownload(blob, filename) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }

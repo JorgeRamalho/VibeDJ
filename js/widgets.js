@@ -1,17 +1,4 @@
-const KEYS = [
-  { n: 1, minor: "Lá♭ menor", major: "Si maior" },
-  { n: 2, minor: "Mi♭ menor", major: "Fá# maior" },
-  { n: 3, minor: "Si♭ menor", major: "Ré♭ maior" },
-  { n: 4, minor: "Fá menor", major: "Lá♭ maior" },
-  { n: 5, minor: "Dó menor", major: "Mi♭ maior" },
-  { n: 6, minor: "Sol menor", major: "Si♭ maior" },
-  { n: 7, minor: "Ré menor", major: "Fá maior" },
-  { n: 8, minor: "Lá menor", major: "Dó maior" },
-  { n: 9, minor: "Mi menor", major: "Sol maior" },
-  { n: 10, minor: "Si menor", major: "Ré maior" },
-  { n: 11, minor: "Fá# menor", major: "Lá maior" },
-  { n: 12, minor: "Ré♭ menor", major: "Mi maior" },
-];
+import { CAMELOT_KEYS as KEYS } from "./camelot-key.js";
 
 function mountCamelot() {
   const root = document.getElementById("camelot-app");

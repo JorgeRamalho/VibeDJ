@@ -20,14 +20,14 @@ Use stems **só para estudo e montagem no laboratório**. O master final liberá
 | `vocals` | Vocal / chop |
 | `other` | Stab, transição, resto |
 
-Com **6 stems** (htdemucs): use `drums` para percussão, exporte kick/hat manualmente se o UVR permitir, ou anexe WAVs já renomeados por órgão.
+Com **6 stems** (htdemucs): use `drums` para percussão, exporte kick/hat manualmente se o UVR permitir, ou anexe WAVs já renomeados por elemento.
 
 ## Híbrido
 
 - Cadeira **com** stem → montagem usa o arquivo anexado.
 - Cadeira **sem** stem → montagem usa **filtro na mix** (como antes).
 
-A leitura final JSON indica quantos órgãos vieram de stem vs filtro (`fontes_montagem`).
+A leitura final JSON indica quantos elementos vieram de stem vs filtro (`fontes_montagem`).
 
 ## FFmpeg (alternativa ao MP3 no browser)
 

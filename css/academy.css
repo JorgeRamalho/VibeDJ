@@ -775,6 +775,71 @@ th { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-
   cursor: pointer;
 }
 .lesson__checks input { margin-top: 0.35em; accent-color: var(--acid); }
+.lesson__refs {
+  margin: 24px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg-elev);
+}
+.lesson__refs h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+.lesson__refs__lede {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.lesson__refs__embed {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line);
+}
+.lesson__refs__embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.lesson__refs__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.lesson__refs__item {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.lesson__refs__item:first-child { border-top: 0; padding-top: 0; }
+.lesson__refs__item a {
+  color: var(--acid);
+  font-weight: 500;
+  text-decoration: none;
+}
+.lesson__refs__item a:hover { text-decoration: underline; }
+.lesson__refs__nota {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.lesson__refs__meta {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.lab .lesson__refs {
+  margin-top: 14px;
+  padding: 12px 14px;
+}
 .square {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

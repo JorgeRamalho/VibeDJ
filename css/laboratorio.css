@@ -727,6 +727,16 @@
   letter-spacing: 0.05em;
 }
 
+.analise-facts--key strong[data-camelot] {
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--acid);
+}
+
+.analise-key-meta {
+  max-width: 72ch;
+}
+
 .inventario-meta dd {
   margin: 0;
   color: var(--text);
@@ -953,7 +963,7 @@
 .mesa-receptor-item--b { border-left: 3px solid rgba(126, 208, 196, 0.75); }
 .mesa-receptor-item--vazio { opacity: 0.72; }
 
-.mesa-receptor-item__orgao {
+.mesa-receptor-item__elemento {
   font-weight: 700;
   font-size: 0.92rem;
 }
@@ -1149,7 +1159,7 @@
 
 .mesa-row { margin-bottom: 8px; }
 
-.mesa-orgao,
+.mesa-elemento,
 .mesa-leito {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -1157,7 +1167,7 @@
   text-align: left;
 }
 
-.mesa-orgao {
+.mesa-elemento {
   display: grid;
   gap: 2px;
   padding: 10px 12px;
@@ -1165,26 +1175,26 @@
   cursor: pointer;
 }
 
-.mesa-orgao b { font-size: 0.92rem; }
-.mesa-orgao small { color: var(--faint); font-family: var(--mono); font-size: 0.68rem; }
-.mesa-orgao span { color: var(--copper); font-size: 0.75rem; }
+.mesa-elemento b { font-size: 0.92rem; }
+.mesa-elemento small { color: var(--faint); font-family: var(--mono); font-size: 0.68rem; }
+.mesa-elemento span { color: var(--copper); font-size: 0.75rem; }
 
-.mesa-orgao--alta { box-shadow: inset 3px 0 0 var(--acid); }
-.mesa-orgao--media { box-shadow: inset 3px 0 0 var(--sea); }
+.mesa-elemento--alta { box-shadow: inset 3px 0 0 var(--acid); }
+.mesa-elemento--media { box-shadow: inset 3px 0 0 var(--sea); }
 
-.mesa-orgao--a:not(.is-retirado) { border-color: rgba(215, 176, 138, 0.35); }
-.mesa-orgao--b:not(.is-retirado) { border-color: rgba(126, 208, 196, 0.35); }
+.mesa-elemento--a:not(.is-retirado) { border-color: rgba(215, 176, 138, 0.35); }
+.mesa-elemento--b:not(.is-retirado) { border-color: rgba(126, 208, 196, 0.35); }
 
 .mesa-col--a { color: var(--copper); }
 .mesa-col--b { color: var(--sea); text-align: right; }
 .mesa-col--receptor { text-align: center; color: var(--acid); }
 
-.mesa-orgao.is-retirado {
+.mesa-elemento.is-retirado {
   border-color: var(--acid);
   background: rgba(228, 255, 87, 0.08);
 }
 
-.mesa-orgao.is-retirado span { color: var(--acid); }
+.mesa-elemento.is-retirado span { color: var(--acid); }
 
 .mesa-leito {
   display: grid;

@@ -14,10 +14,11 @@ const NFFT = 2048;
  *   rate: number,
  *   duration: number,
  *   layers?: Map<string, { share: number, hint?: string }> | Record<string, { share: number }>,
+ *   elementLayers?: Record<string, { qualidade?: number, source?: string }>,
  * }} input
  */
 export function buildElementInventory(input) {
-  const { overview, mono, rate, duration, layers } = input;
+  const { overview, mono, rate, duration, layers, elementLayers } = input;
   const bandShare = (id) => overview.bands?.find((b) => b.id === id)?.share ?? 0;
   const bpm = overview.bpm || 0;
   const fourOnFloor = bpm > 0 ? scoreFourOnFloor(mono, rate, bpm) : 0;
@@ -35,7 +36,7 @@ export function buildElementInventory(input) {
   };
 
   const elementos = Object.fromEntries(
-    CHAIRS.map((chair) => [chair.id, describeElement(chair.id, chair.label, ctx)]),
+    CHAIRS.map((chair) => [chair.id, describeElement(chair.id, chair.label, ctx, elementLayers?.[chair.id])]),
   );
 
   return {
@@ -50,7 +51,7 @@ export function buildElementInventory(input) {
   };
 }
 
-function describeElement(id, label, ctx) {
+function describeElement(id, label, ctx, elementLayer) {
   switch (id) {
     case "kick":
       return baseElement(label, ctx, {
@@ -60,7 +61,7 @@ function describeElement(id, label, ctx) {
         leitura: kickRead(ctx),
         funcao: "Quatro tempos · chão rítmico",
         faixa_hz: "40–100",
-      });
+      }, elementLayer);
     case "clap":
       return baseElement(label, ctx, {
         energia_presenca: ctx.bandShare("presenca"),
@@ -69,7 +70,7 @@ function describeElement(id, label, ctx) {
         leitura: clapRead(ctx),
         funcao: "Tempos 2 e 4 · estalo",
         faixa_hz: "800 Hz–3 kHz",
-      });
+      }, elementLayer);
     case "hat":
       return baseElement(label, ctx, {
         energia_ar: ctx.bandShare("ar"),
@@ -78,7 +79,7 @@ function describeElement(id, label, ctx) {
         leitura: hatRead(ctx),
         funcao: "Contratempo · costura",
         faixa_hz: "6–14 kHz",
-      });
+      }, elementLayer);
     case "bass":
       return baseElement(label, ctx, {
         energia_grave: ctx.bandShare("grave"),
@@ -88,7 +89,7 @@ function describeElement(id, label, ctx) {
         leitura: bassRead(ctx),
         funcao: "Linha grave · dialoga com kick",
         faixa_hz: "60–220",
-      });
+      }, elementLayer);
     case "stab":
       return baseElement(label, ctx, {
         energia_corpo: ctx.bandShare("corpo"),
@@ -98,7 +99,7 @@ function describeElement(id, label, ctx) {
         leitura: stabRead(ctx),
         funcao: "Acorde curto · harmonia rítmica",
         faixa_hz: "200 Hz–2 kHz",
-      });
+      }, elementLayer);
     case "fx":
       return baseElement(label, ctx, {
         energia_ar: ctx.bandShare("ar"),
@@ -108,7 +109,7 @@ function describeElement(id, label, ctx) {
         leitura: fxRead(ctx),
         funcao: "Riser · sweep · impacto",
         faixa_hz: "amplo",
-      });
+      }, elementLayer);
     case "perc":
       return baseElement(label, ctx, {
         ataque: ctx.percHarm.percussive,
@@ -117,7 +118,7 @@ function describeElement(id, label, ctx) {
         leitura: percRead(ctx),
         funcao: "Shaker · conga · rim",
         faixa_hz: "200 Hz–8 kHz",
-      });
+      }, elementLayer);
     case "vocal":
       return baseElement(label, ctx, {
         energia_presenca: ctx.bandShare("presenca"),
@@ -127,7 +128,7 @@ function describeElement(id, label, ctx) {
         leitura: vocalRead(ctx),
         funcao: "Voz · chop · spoken",
         faixa_hz: "300 Hz–4 kHz",
-      });
+      }, elementLayer);
     default: {
       const unknown = id;
       throw new Error(`Elemento desconhecido: ${unknown}`);
@@ -135,12 +136,15 @@ function describeElement(id, label, ctx) {
   }
 }
 
-function baseElement(label, ctx, extra) {
-  const confianca = Math.round(clamp(extra.peso === "indetectavel" ? 0.08 : presRank(extra.peso) / 3 + (ctx.bpm > 0 ? 0.2 : 0.05), 0.08, 0.95) * 100);
+function baseElement(label, ctx, extra, elementLayer) {
+  let confianca = Math.round(clamp(extra.peso === "indetectavel" ? 0.08 : presRank(extra.peso) / 3 + (ctx.bpm > 0 ? 0.2 : 0.05), 0.08, 0.95) * 100);
+  if (elementLayer?.qualidade) confianca = Math.round(clamp(confianca * 0.45 + elementLayer.qualidade * 0.55, 8, 98));
   return {
     rotulo: label,
     presenca: extra.peso,
     confianca,
+    extracao: elementLayer?.source ?? null,
+    qualidade_extracao: elementLayer?.qualidade ?? null,
     funcao: extra.funcao,
     faixa_hz: extra.faixa_hz,
     leitura: extra.leitura,
@@ -266,6 +270,7 @@ export function renderInventarioCards(inventario) {
         <dl class="inventario-meta">
           <div><dt>Faixa</dt><dd>${el.faixa_hz}</dd></div>
           <div><dt>Confiança</dt><dd>${el.confianca}%</dd></div>
+          ${el.qualidade_extracao != null ? `<div><dt>Extração</dt><dd>${el.qualidade_extracao}%</dd></div>` : ""}
         </dl>
       </article>`;
     }).join("")}
@@ -290,7 +295,7 @@ export function buildTransplantPlan(doadorInv, receptorInv) {
   return {
     tipo: "plano-transplante-vibedj",
     versao: 1,
-    metafora: "Transplante de papéis — melodia e harmonia como órgãos, timbre recriado no receptor.",
+    metafora: "Transplante de papéis — melodia e harmonia como elementos, timbre recriado no receptor.",
     aviso: "Sons finais devem ser seus (sample/synth). O doador informa o papel; o receptor recebe a lógica.",
     pares,
   };
@@ -325,7 +330,7 @@ function transplantSuggestion(d, r) {
     return "Ambos têm este papel — troca (↻) ou mantenha o receptor ouvindo o doador como referência.";
   }
   if (ds <= 1 && rs >= 2) {
-    return "Doador fraco aqui; receptor já sustenta — não transplantar este órgão.";
+    return "Doador fraco aqui; receptor já sustenta — não transplantar este elemento.";
   }
   return "Marcar na grade; transplante opcional.";
 }
