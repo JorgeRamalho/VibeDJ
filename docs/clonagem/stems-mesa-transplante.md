@@ -2,23 +2,44 @@
 
 Use stems **só para estudo e montagem no laboratório**. O master final liberável continua sendo recriação sua no LMMS (samples/MIDI), conforme [metodo-cadeiras.md](./metodo-cadeiras.md).
 
-## Fluxo recomendado
+## Fluxo no navegador
+
+No painel do doador, **Separar stems** baixa dois modelos ONNX e roda no próprio navegador. O áudio não sai da máquina.
+
+1. O recorte são 16 compassos a partir do primeiro ataque, no BPM já estimado. Se a leitura não tiver confiança, o andamento é 124.
+2. HT-Demucs devolve `drums`, `bass`, `vocals` e `other`.
+3. DrumSep v2 recebe só `drums` e devolve kick, snare, cymbals e toms.
+4. Cadeiras que você já anexou à mão não são substituídas. Stab e transição continuam no filtro da mix, porque `other` misturaria as duas se fosse para as duas cadeiras.
+
+| Saída | Cadeira |
+|---|---|
+| kick | Kick |
+| snare | Clap |
+| cymbals | Hi-hat |
+| toms | Percussão |
+| bass | Baixo |
+| vocals | Vocal / chop |
+| other | nenhuma |
+
+Os pesos não estão no repositório. O navegador baixa na hora e guarda na Cache API.
+
+## Fluxo no PC, quando o navegador não der conta
 
 1. Carregue as **mixes** doadoras A e B na mesa (inventário heurístico).
 2. Separe stems no PC com **Ultimate Vocal Remover**, **Demucs** ou similar.
-3. Em cada doador, abra **Stems UVR/Demucs (opcional)** e anexe um arquivo por **cadeira** (kick, clap, hi-hat, …).
+3. Em cada doador, abra **Stems** e anexe um arquivo por **cadeira** (kick, clap, hi-hat, …).
 4. Monte a receita na matriz (retirar de A ou B).
 5. **Leitura final** → modo **Track montada** → **Gerar track e ler resultado**.
 6. Escolha **WAV** ou **MP3** e baixe. Opcional: LMMS com [receita-lmms.md](./receita-lmms.md).
 
-## Mapeamento Demucs → cadeiras (sugestão)
+## Mapeamento Demucs de quatro stems, sem DrumSep
 
 | Arquivo Demucs (4 stems) | Cadeira na mesa |
 |--------------------------|-----------------|
-| `drums` | Kick + clap + hat + perc (ideal: stems mais finas) |
+| `drums` | ainda junta kick, clap, hat e perc — passe pelo DrumSep antes de anexar |
 | `bass` | Baixo |
 | `vocals` | Vocal / chop |
-| `other` | Stab, transição, resto |
+| `other` | não anexe em stab e transição ao mesmo tempo |
 
 Com **6 stems** (htdemucs): use `drums` para percussão, exporte kick/hat manualmente se o UVR permitir, ou anexe WAVs já renomeados por elemento.
 

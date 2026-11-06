@@ -1,9 +1,11 @@
 import { CHAIRS } from "./clonagem-model.js";
 import { estimateMusicalKeyFromMono } from "./camelot-key.js";
 import { downloadBlob, encodeMp3Blob, encodeWavBlob } from "./export-audio.js";
-import { extractElementLayers } from "./extracao-elementos.js?v=3";
+import { extractElementLayers } from "./extracao-elementos.js?v=4";
 import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
 import { isolationSummary, renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { medirTonalidadeETextura } from "./leitura-audio-core.js";
+import { montarLeituraJson } from "./leitura-relatorio.js";
 import { bindStemsPanel } from "./stems-import.js";
 
 const ACCEPT = "audio/*,.mp3,.wav,.wave,.flac,.ogg,.oga,.m4a,.aac,.aiff,.aif,.webm";
@@ -18,7 +20,7 @@ const BANDS = [
   { id: "ar", label: "Ar", lo: 4500, hi: 24000, hint: "4,5 kHz+" },
 ];
 
-const mount = document.querySelector("[data-analise]");
+const mount = typeof document === "undefined" ? null : document.querySelector("[data-analise]");
 if (mount) boot(mount);
 
 function boot(root) {
@@ -249,12 +251,17 @@ function boot(root) {
     }));
     const bpm = estimateBpm(mono, rate);
     const side = stereoSide(audio);
+    const textura = medirTonalidadeETextura(mono, rate);
     return {
       bpm: bpm.bpm,
       note: bpm.note,
+      bpm_confianca: bpm.confianca,
       centroid: magSum ? centroidSum / magSum : 0,
       bands,
       side,
+      tonalidade: textura.tonalidade,
+      ataque: textura.ataque,
+      harmonia: textura.harmonia,
     };
   }
 
@@ -335,6 +342,10 @@ function boot(root) {
       { id: "percussivo", label: "Ataque", share: 1 - hShare },
       { id: "harmonico", label: "Harmonia", share: hShare },
     ], "is-sea");
+    if (state.overview) {
+      state.overview.ataque = 1 - hShare;
+      state.overview.harmonia = hShare;
+    }
     paintInventario();
     const analisePayload = report();
     ui.report.textContent = JSON.stringify(analisePayload, null, 2);
@@ -656,26 +667,29 @@ function boot(root) {
     }
   }
 
+  /**
+   * Junta a ficha de qualidade da leitura com o isolamento fino que veio do remoto.
+   * @returns {object} JSON publicado em `window.__vibedjLastAnalise`.
+   */
   function report() {
     const overview = state.overview || {};
     const inventario = state.inventario;
-    const checklist = inventario ? leituraChecklist(inventario) : null;
+    const ficha = montarLeituraJson({
+      nome: state.name || "",
+      buffer: state.buffer,
+      overview,
+      inventario,
+      trecho: {
+        inicio_segundos: round(state.excerptStart, 2),
+        duracao_segundos: state.excerptSeconds,
+      },
+    });
     return {
+      ...ficha,
       tipo: "leitura-arquivo-vibedj",
       versao: 2,
-      arquivo: state.name || "",
-      origem: "arquivo local, lido só neste navegador",
-      aviso: "Estimativas de mix. Não são as faixas da sessão e não formam uma cópia da obra.",
-      duracao_segundos: round(state.duration, 2),
-      amostragem_hz: state.buffer ? state.buffer.sampleRate : 0,
-      canais: state.buffer ? state.buffer.numberOfChannels : 0,
-      bpm_estimado: overview.bpm ? round(overview.bpm, 1) : null,
       tonalidade_camelot: overview.key || null,
-      centroide_hz: overview.centroid ? Math.round(overview.centroid) : null,
-      lados_energia: overview.side != null ? round(overview.side, 3) : null,
-      faixas: overview.bands || [],
-      leitura: checklist,
-      inventario_elementos: inventario,
+      leitura: inventario ? leituraChecklist(inventario) : null,
       elementos_wav: state.elementLayers
         ? Object.fromEntries(
             CHAIRS.map((chair) => {
@@ -694,10 +708,6 @@ function boot(root) {
           )
         : null,
       isolamento: state.elementLayers ? isolationSummary(state.elementLayers) : null,
-      trecho: {
-        inicio_segundos: round(state.excerptStart, 2),
-        duracao_segundos: state.excerptSeconds,
-      },
     };
   }
 
@@ -903,7 +913,7 @@ function estimateBpm(mono, rate) {
     env.push(Math.max(0, energy - previous));
     previous = energy;
   }
-  if (env.length < 8) return { bpm: 0, note: "Trecho curto demais para o andamento." };
+  if (env.length < 8) return { bpm: 0, note: "Trecho curto demais para o andamento.", confianca: 0 };
   const frameRate = rate / hop;
   let best = { bpm: 0, score: 0 };
   let second = 0;
@@ -932,9 +942,10 @@ function estimateBpm(mono, rate) {
       note = "O pulso forte estava no dobro. A leitura ficou na metade, mais perto do chão da pista.";
     }
   }
-  const confidence = best.score ? second / best.score : 1;
-  if (confidence > 0.92) note = "O andamento está disputado. Confira batendo o pé.";
-  return { bpm: chosen, note };
+  const disputa = best.score ? second / best.score : 1;
+  if (disputa > 0.92) note = "O andamento está disputado. Confira batendo o pé.";
+  const confianca = best.score ? Math.min(1, Math.max(0, 1 - disputa)) : 0;
+  return { bpm: chosen, note, confianca };
 }
 
 function scoreAt(env, frameRate, bpm) {

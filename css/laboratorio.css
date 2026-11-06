@@ -1244,7 +1244,8 @@
   color: var(--faint);
 }
 
-.stems-panel__actions {
+.stems-panel__actions,
+.stems-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem 1rem;

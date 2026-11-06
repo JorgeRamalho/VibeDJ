@@ -52,9 +52,10 @@ export function estimateBpm(mono, rate) {
     env.push(Math.max(0, energy - previous));
     previous = energy;
   }
-  if (env.length < 8) return { bpm: 0, note: "Trecho curto demais para o andamento." };
+  if (env.length < 8) return { bpm: 0, note: "Trecho curto demais para o andamento.", confianca: 0 };
   const frameRate = rate / hop;
   let best = { bpm: 0, score: 0 };
+  let second = 0;
   for (let bpm = 80; bpm <= 180; bpm += 0.5) {
     const lag = Math.round((frameRate * 60) / bpm);
     if (lag < 1 || lag >= env.length) continue;
@@ -65,7 +66,11 @@ export function estimateBpm(mono, rate) {
       count += 1;
     }
     score /= count || 1;
-    if (score > best.score) best = { bpm, score };
+    const far = Math.abs(bpm - best.bpm) > 4;
+    if (score > best.score) {
+      if (far) second = best.score;
+      best = { bpm, score };
+    } else if (far && score > second) second = score;
   }
   let chosen = best.bpm;
   let note = "Estimativa pelo pulso dos ataques.";
@@ -85,7 +90,162 @@ export function estimateBpm(mono, rate) {
       }
     }
   }
-  return { bpm: chosen, note };
+  const confianca = best.score > 0 ? clamp01(1 - second / best.score) : 0;
+  return { bpm: chosen, note, confianca };
+}
+
+const PERFIL_MAIOR = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+const PERFIL_MENOR = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+const NOME_MENOR = ["Dó menor", "Dó# menor", "Ré menor", "Mi♭ menor", "Mi menor", "Fá menor", "Fá# menor", "Sol menor", "Sol# menor", "Lá menor", "Si♭ menor", "Si menor"];
+const NOME_MAIOR = ["Dó maior", "Ré♭ maior", "Ré maior", "Mi♭ maior", "Mi maior", "Fá maior", "Fá# maior", "Sol maior", "Lá♭ maior", "Lá maior", "Si♭ maior", "Si maior"];
+const CAMELOT_MENOR = ["5A", "12A", "7A", "2A", "9A", "4A", "11A", "6A", "1A", "8A", "3A", "10A"];
+const CAMELOT_MAIOR = ["8B", "3B", "10B", "5B", "12B", "7B", "2B", "9B", "4B", "11B", "6B", "1B"];
+
+/**
+ * Estima tonalidade, código Camelot e a divisão entre ataque e harmonia.
+ * O grave pesa mais na tônica, porque em tech house a raiz costuma estar no baixo.
+ * @param {Float32Array} mono Sinal já somado para um canal.
+ * @param {number} rate Taxa de amostragem em Hz.
+ * @returns {{
+ *   tonalidade: { nome: string, modo: "menor" | "maior", camelot: string, confianca: number },
+ *   ataque: number,
+ *   harmonia: number,
+ * }}
+ */
+export function medirTonalidadeETextura(mono, rate) {
+  const chroma = new Float64Array(12);
+  const grave = new Float64Array(12);
+  let flux = 0;
+  let estavel = 0;
+  const frames = 96;
+  const usable = Math.max(0, mono.length - NFFT);
+  const re = new Float32Array(NFFT);
+  const im = new Float32Array(NFFT);
+  const window = hann(NFFT);
+  let anterior = null;
+  for (let frame = 0; frame < frames; frame += 1) {
+    const start = usable ? Math.floor((frame / frames) * usable) : 0;
+    re.fill(0);
+    im.fill(0);
+    for (let index = 0; index < NFFT; index += 1) re[index] = (mono[start + index] || 0) * window[index];
+    fft(re, im);
+    const atual = new Float32Array(NFFT / 2);
+    let pico = 0;
+    for (let bin = 1; bin < NFFT / 2; bin += 1) {
+      const mag = Math.hypot(re[bin], im[bin]);
+      atual[bin] = mag;
+      if (mag > pico) pico = mag;
+      if (anterior) {
+        const delta = mag - anterior[bin];
+        if (delta > 0) flux += delta;
+        else estavel += mag;
+      }
+    }
+    const piso = pico * 0.12;
+    for (let bin = 2; bin < NFFT / 2 - 1; bin += 1) {
+      const mag = atual[bin];
+      if (mag < piso || mag < atual[bin - 1] || mag < atual[bin + 1]) continue;
+      const freq = frequenciaDoPico(atual, bin, rate);
+      if (freq < 45 || freq > 2800) continue;
+      const midi = 69 + 12 * Math.log2(freq / 440);
+      const pc = ((Math.round(midi) % 12) + 12) % 12;
+      chroma[pc] += mag;
+      if (freq <= 220) grave[pc] += mag * 3;
+    }
+    anterior = atual;
+  }
+  const tonalidade = escolherTonalidade(chroma, grave);
+  const total = flux + estavel;
+  const ataque = total > 0 ? flux / total : 0;
+  return { tonalidade, ataque, harmonia: total > 0 ? estavel / total : 0 };
+}
+
+/**
+ * Ajusta a frequência do bin de pico com os vizinhos, para o grave não cair na nota ao lado.
+ * @param {Float32Array} mags Magnitudes da metade útil da FFT.
+ * @param {number} bin Índice do pico.
+ * @param {number} rate Taxa de amostragem em Hz.
+ * @returns {number}
+ */
+function frequenciaDoPico(mags, bin, rate) {
+  const esquerda = mags[bin - 1];
+  const centro = mags[bin];
+  const direita = mags[bin + 1];
+  const denominador = esquerda - 2 * centro + direita;
+  const delta = Math.abs(denominador) < 1e-12 ? 0 : (0.5 * (esquerda - direita)) / denominador;
+  const ajuste = Math.min(0.5, Math.max(-0.5, delta));
+  return ((bin + ajuste) * rate) / NFFT;
+}
+
+function escolherTonalidade(chroma, grave) {
+  let graveSoma = 0;
+  for (let index = 0; index < 12; index += 1) graveSoma += grave[index];
+  const candidatos = [];
+  for (let tonica = 0; tonica < 12; tonica += 1) {
+    const raiz = graveSoma > 0 ? grave[tonica] / graveSoma : 0;
+    candidatos.push({
+      modo: "menor",
+      tonica,
+      score: pearsonRotacionado(chroma, PERFIL_MENOR, tonica) + raiz * 0.85,
+    });
+    candidatos.push({
+      modo: "maior",
+      tonica,
+      score: pearsonRotacionado(chroma, PERFIL_MAIOR, tonica) + raiz * 0.85,
+    });
+  }
+  candidatos.sort((a, b) => b.score - a.score);
+  const melhor = candidatos[0];
+  const relativa = candidatos.find((item) => item.modo !== melhor.modo && item.tonica === relativaDe(melhor));
+  const outras = candidatos.find((item) => item !== melhor && item !== relativa);
+  const margemRelativa = relativa ? melhor.score - relativa.score : melhor.score;
+  const margemOutras = outras ? melhor.score - outras.score : melhor.score;
+  const raiz = graveSoma > 0 ? grave[melhor.tonica] / graveSoma : 0;
+  const confianca = Math.round(
+    Math.min(95, Math.max(8, 38 + margemOutras * 70 + Math.max(0, margemRelativa) * 120 + raiz * 28)),
+  );
+  const menor = melhor.modo === "menor";
+  return {
+    nome: menor ? NOME_MENOR[melhor.tonica] : NOME_MAIOR[melhor.tonica],
+    modo: melhor.modo,
+    camelot: menor ? CAMELOT_MENOR[melhor.tonica] : CAMELOT_MAIOR[melhor.tonica],
+    confianca,
+  };
+}
+
+/**
+ * Devolve a tônica da relativa, porque menor e maior vizinhos disputam o mesmo conjunto de notas.
+ * @param {{ modo: string, tonica: number }} tom Candidato já escolhido.
+ * @returns {number}
+ */
+function relativaDe(tom) {
+  return tom.modo === "menor" ? (tom.tonica + 3) % 12 : (tom.tonica + 9) % 12;
+}
+
+function pearsonRotacionado(chroma, perfil, tonica) {
+  let mediaCroma = 0;
+  let mediaPerfil = 0;
+  for (let index = 0; index < 12; index += 1) {
+    mediaCroma += chroma[(tonica + index) % 12];
+    mediaPerfil += perfil[index];
+  }
+  mediaCroma /= 12;
+  mediaPerfil /= 12;
+  let numerador = 0;
+  let desvioCroma = 0;
+  let desvioPerfil = 0;
+  for (let index = 0; index < 12; index += 1) {
+    const valorCroma = chroma[(tonica + index) % 12] - mediaCroma;
+    const valorPerfil = perfil[index] - mediaPerfil;
+    numerador += valorCroma * valorPerfil;
+    desvioCroma += valorCroma * valorCroma;
+    desvioPerfil += valorPerfil * valorPerfil;
+  }
+  return numerador / Math.sqrt(desvioCroma * desvioPerfil + 1e-12);
+}
+
+function clamp01(value) {
+  return Math.min(1, Math.max(0, value));
 }
 
 export async function decodeAudioFile(file, audioContext) {
@@ -130,12 +290,17 @@ export async function scanOverview(mono, rate, audio) {
     share: bandEnergy[index] / total,
   }));
   const bpm = estimateBpm(mono, rate);
+  const textura = medirTonalidadeETextura(mono, rate);
   return {
     bpm: bpm.bpm,
     note: bpm.note,
+    bpm_confianca: bpm.confianca,
     centroid: magSum ? centroidSum / magSum : 0,
     bands,
     side: stereoSide(audio),
+    tonalidade: textura.tonalidade,
+    ataque: textura.ataque,
+    harmonia: textura.harmonia,
   };
 }
 

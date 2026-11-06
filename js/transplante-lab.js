@@ -3,11 +3,13 @@ import { estimateMusicalKeyFromMono } from "./camelot-key.js";
 import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
 import { CHAIRS, mergeLabPacket } from "./clonagem-model.js";
 import { compassosEscolhidos, realizarELer } from "./realizacao-receptor.js";
-import { extractElementLayers, layerSourceLabel } from "./extracao-elementos.js?v=3";
-import { renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { extractElementLayers, layerSourceLabel } from "./extracao-elementos.js?v=4";
+import { createStemLayer, renderStemsPanelHtml } from "./isolamento-cadeiras.js";
 import { bindStemsPanel } from "./stems-import.js";
 import { montarTrackRealELer, renderElementStemsForEdicao } from "./montagem-receptor.js";
 import { downloadTrack, downloadWav } from "./export-audio.js";
+import { preencherCadeirasVazias } from "./stem-separa.js";
+import { separarDoador } from "./stem-onnx.js";
 
 const mount = document.querySelector("[data-transplante]");
 if (mount) boot(mount);
@@ -27,6 +29,10 @@ function boot(root) {
   /** @type {AudioBufferSourceNode | null} */
   let resultSource = null;
   let resultSignature = "";
+  /** @type {Record<"a"|"b", AbortController | null>} */
+  const separacao = { a: null, b: null };
+  /** @type {Record<"a"|"b", number>} */
+  const geracaoSeparacao = { a: 0, b: 0 };
 
   root.innerHTML = `
     <ol class="mesa-passos" aria-label="Como a mesa funciona">
@@ -230,6 +236,8 @@ function boot(root) {
     const input = root.querySelector(`[data-file-${id}]`);
     input.addEventListener("change", () => loadDonor(id, input.files?.[0]));
     bindDrop(root.querySelector(`[data-drop-${id}]`), (file) => loadDonor(id, file));
+    root.querySelector(`[data-separar-${id}]`)?.addEventListener("click", () => separarDonor(id));
+    root.querySelector(`[data-cancelar-${id}]`)?.addEventListener("click", () => separacao[id]?.abort());
   });
 
   const stemsPanels = {
@@ -296,6 +304,8 @@ function boot(root) {
 
   async function loadDonor(id, file) {
     if (!file) return;
+    separacao[id]?.abort();
+    geracaoSeparacao[id] += 1;
     const status = root.querySelector(`[data-status-${id}]`);
     const body = root.querySelector(`[data-body-${id}]`);
     status.textContent = `Lendo ${file.name}…`;
@@ -342,6 +352,10 @@ function boot(root) {
       body.innerHTML = donorSummary(donors[id]);
       stemsPanels[id].show();
       stemsPanels[id].resetLabels();
+      const separarBox = root.querySelector(`[data-separar-box-${id}]`);
+      if (separarBox) separarBox.hidden = false;
+      const separarStatus = root.querySelector(`[data-separar-status-${id}]`);
+      if (separarStatus) separarStatus.textContent = "";
       status.textContent = "Inventário pronto. Os elementos entram na mesa.";
       const readyNow = bothReady();
       syncChrome();
@@ -414,7 +428,7 @@ function boot(root) {
       <span class="mesa-receptor-item__elemento">${chair.label}</span>
       <span class="mesa-receptor-item__origem">${tag} · ${donorFile} · ${fonte}</span>
       <span class="mesa-receptor-item__leitura">${el.leitura}</span>
-      <button type="button" class="mesa-ouvir" data-ouvir="${origem}" data-elemento="${chair.id}">Ouvir trecho da mix do ${tag}</button>
+      <button type="button" class="mesa-ouvir" data-ouvir="${origem}" data-elemento="${chair.id}">${donors[origem].stems?.[chair.id] || layer?.source === "stem" ? `Ouvir stem de ${chair.label}` : `Ouvir trecho da mix do ${tag}`}</button>
     </li>`;
   }
 
@@ -613,27 +627,108 @@ function boot(root) {
     pen.stroke();
   }
 
+  /**
+   * Toca a stem da cadeira quando ela existe. Sem stem, toca um trecho da mix do doador.
+   * @param {"a"|"b"} side Lado do doador.
+   * @param {string} elementId Identificador da cadeira, ou vazio para a mix.
+   */
   async function playDonorExcerpt(side, elementId) {
     const slot = donors[side];
     if (!slot.buffer || !ctx) return;
     stopPreview();
     await ctx.resume();
-    const duration = slot.buffer.duration;
-    const start = Math.max(0, duration * 0.2);
-    const len = Math.min(10, Math.max(0.5, duration - start));
+    const found = CHAIRS.find((c) => c.id === elementId);
+    const label = found ? found.label : "mix";
+    const quem = side === "a" ? "Doador A" : "Doador B";
+    const stem = elementId ? slot.stems?.[elementId] : null;
+    const layer = elementId ? slot.elementLayers?.[elementId] : null;
+    const stemMono = stem?.mono?.length ? stem : (layer?.source === "stem" && layer.mono?.length ? layer : null);
     previewSource = ctx.createBufferSource();
-    previewSource.buffer = slot.buffer;
     previewSource.connect(ctx.destination);
     previewSource.onended = () => {
       previewSource = null;
       previewStatus = "";
       paintReceptorPanel();
     };
-    previewSource.start(0, start, len);
-    const found = CHAIRS.find((c) => c.id === elementId);
-    const label = found ? found.label : "mix";
-    previewStatus = `Tocando ~${Math.round(len)} s da mix do ${side === "a" ? "Doador A" : "Doador B"} (trecho de referência para ${label}; não isola o elemento).`;
+    if (stemMono?.mono?.length) {
+      const buffer = ctx.createBuffer(1, stemMono.mono.length, stemMono.rate);
+      buffer.copyToChannel(stemMono.mono, 0);
+      previewSource.buffer = buffer;
+      previewSource.start();
+      previewStatus = `Tocando a stem de ${label} do ${quem}. É estimativa, para estudo.`;
+    } else {
+      const duration = slot.buffer.duration;
+      const start = Math.max(0, duration * 0.2);
+      const len = Math.min(10, Math.max(0.5, duration - start));
+      previewSource.buffer = slot.buffer;
+      previewSource.start(0, start, len);
+      previewStatus = `Tocando ~${Math.round(len)} s da mix do ${quem} (trecho de referência para ${label}; não isola o elemento).`;
+    }
     paintReceptorPanel();
+  }
+
+  /**
+   * Roda as duas passagens no doador e preenche só as cadeiras que ainda não têm arquivo.
+   * @param {"a"|"b"} id
+   */
+  async function separarDonor(id) {
+    const slot = donors[id];
+    if (!slot.buffer || separacao[id]) return;
+    const controller = new AbortController();
+    const geracao = geracaoSeparacao[id];
+    separacao[id] = controller;
+    const status = root.querySelector(`[data-separar-status-${id}]`);
+    const botao = root.querySelector(`[data-separar-${id}]`);
+    const cancelar = root.querySelector(`[data-cancelar-${id}]`);
+    if (botao instanceof HTMLButtonElement) botao.disabled = true;
+    if (cancelar instanceof HTMLButtonElement) cancelar.hidden = false;
+    if (status) status.textContent = "Preparando a separação…";
+    try {
+      const separados = await separarDoador(slot.buffer, slot.inventario?.bpm_estimado, {
+        signal: controller.signal,
+        onProgress: (mensagem) => {
+          if (status) status.textContent = mensagem;
+        },
+      });
+      if (separacao[id] !== controller || geracaoSeparacao[id] !== geracao) return;
+      const aviso = separados.aviso;
+      const preenchido = preencherCadeirasVazias(slot.stems, separados, slot.rate || 44100);
+      slot.stems = preenchido.stems;
+      const layers = { ...(slot.elementLayers || {}) };
+      preenchido.preenchidas.forEach((chairId) => {
+        const stem = slot.stems[chairId];
+        if (!stem?.mono?.length) return;
+        layers[chairId] = createStemLayer(stem.mono, stem.rate, stem.name);
+        const label = root.querySelector(`[data-stem-label-${id}-${chairId}]`);
+        if (label && stem.name) label.textContent = stem.name;
+      });
+      slot.elementLayers = layers;
+      slot.elementLayersDirty = false;
+      const vazias = preenchido.preenchidas.length;
+      const mantidas = preenchido.mantidas.length;
+      if (status) {
+        status.textContent = aviso
+          ? aviso
+          : vazias === 0
+            ? "Nenhuma cadeira vazia para preencher. As stems que você anexou foram mantidas."
+            : `Preenchi ${vazias} cadeira${vazias === 1 ? "" : "s"}.${mantidas ? ` Mantive ${mantidas} anexo${mantidas === 1 ? "" : "s"}.` : ""} Stab e transição continuam no filtro da mix.`;
+      }
+      if (ui.dialog.open) paintMesa();
+    } catch (err) {
+      if (separacao[id] !== controller || geracaoSeparacao[id] !== geracao) return;
+      if (status) {
+        status.textContent =
+          err instanceof Error && err.name === "AbortError"
+            ? "Separação cancelada."
+            : err instanceof Error
+              ? err.message
+              : "Falha ao separar as stems.";
+      }
+    } finally {
+      if (separacao[id] === controller) separacao[id] = null;
+      if (botao instanceof HTMLButtonElement) botao.disabled = false;
+      if (cancelar instanceof HTMLButtonElement) cancelar.hidden = true;
+    }
   }
 
   function leitoLabel(id, chosen) {
@@ -740,6 +835,14 @@ function donorCard(id, title) {
     <p class="lab-status" data-status-${id} aria-live="polite">Aguardando arquivo.</p>
     <div data-body-${id} hidden></div>
     ${renderStemsPanelHtml(id)}
+    <div data-separar-box-${id} hidden>
+      <div class="stems-actions">
+        <button type="button" class="btn btn--acid btn--sm" data-separar-${id}>Separar stems</button>
+        <button type="button" class="btn btn--ghost btn--sm" data-cancelar-${id} hidden>Cancelar</button>
+      </div>
+      <p class="stems-panel__hint">Estimativa no navegador, nos 16 compassos a partir do primeiro ataque. O master continua sendo a recriação no LMMS. Stab e transição não são preenchidos. Anexo manual não é substituído.</p>
+      <p class="lab-status" data-separar-status-${id} aria-live="polite"></p>
+    </div>
   </article>`;
 }
 

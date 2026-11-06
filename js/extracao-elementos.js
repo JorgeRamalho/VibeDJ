@@ -7,9 +7,10 @@ import { CHAIRS } from "./clonagem-model.js";
 import { mixdown } from "./leitura-audio-core.js";
 
 const NFFT = 2048;
-const HOP_DENSE = 1024;
-const HOP_FAST = 2048;
+/** Hann só reconstrói com sobreposição ≥ 50%. Hop = NFFT deixa a borda do quadro sem peso e gera picos. */
+const HOP = NFFT / 2;
 const ANALISE_MAX_SEC = 240;
+const PEAK_TARGET = 0.92;
 
 /** @typedef {{ mono: Float32Array, rate: number, source: "extracao" | "filtro" | "stem", qualidade: number, stemName?: string }} ElementLayer */
 
@@ -23,12 +24,11 @@ export async function extractElementLayers(buffer, options = {}) {
   const rate = buffer.sampleRate;
   const monoFull = mixdown(buffer);
   const sideCurve = stereoSideCurve(buffer, monoFull.length);
-  const hop = monoFull.length > rate * 90 ? HOP_FAST : HOP_DENSE;
   const maxSamples = Math.min(monoFull.length, Math.floor(rate * ANALISE_MAX_SEC));
   const mono = monoFull.subarray(0, maxSamples);
 
   onProgress("Analisando espectro (ataque × harmonia)…");
-  const stft = await computeStft(mono, hop, options.job?.id ?? 0, () => {});
+  const stft = await computeStft(mono);
   if (!stft) return fallbackFilters(buffer, onProgress);
 
   const qualityFino = options.qualityMode !== "rapido";
@@ -49,10 +49,9 @@ export async function extractElementLayers(buffer, options = {}) {
     const chair = CHAIRS[index];
     onProgress(`Extraindo ${chair.label}…`);
     const maskFn = elementMask(chair.id, rate, masks, sideCurve, stft, beatPulse);
-    const samples = await istft(stft, maskFn, options.job?.id ?? 0);
-    if (!samples) continue;
-    let monoLayer = normalizePeak(samples, 0.92);
-    if (TRANSIENT_CHAIRS.has(chair.id)) monoLayer = emphasizeTransients(monoLayer);
+    const samples = await istft(stft, maskFn);
+    const shaped = TRANSIENT_CHAIRS.has(chair.id) ? emphasizeTransients(samples) : samples;
+    const monoLayer = normalizePeak(shaped, PEAK_TARGET);
     const qualidade = scoreLayer(monoLayer, masks);
     layers[chair.id] = { mono: monoLayer, rate, source: "extracao", qualidade };
     await wait(0);
@@ -64,18 +63,28 @@ export async function extractElementLayers(buffer, options = {}) {
   }
 
   if (maxSamples < monoFull.length) {
-    onProgress("Faixa longa: camadas extraídas do trecho central (até 4 min). Stems UVR/Demucs dão precisão no arquivo inteiro.");
+    onProgress("Faixa longa: camadas extraídas dos primeiros 4 min. Stems UVR/Demucs dão precisão no arquivo inteiro.");
   }
   return layers;
 }
 
 const TRANSIENT_CHAIRS = new Set(["kick", "clap", "hat", "perc"]);
 
+/**
+ * Máscara real por quadro e bin (meio espectro) para uma cadeira.
+ * @param {string} chairId cadeira da mesa
+ * @param {number} rate taxa da mix
+ * @param {{ harmonic: Float32Array, bins: number }} masks razão harmônica do HPSS
+ * @param {Float32Array} sideCurve energia de lados por bloco de 2048 amostras
+ * @param {Stft} stft espectro da mix
+ * @param {Float32Array | null} beatPulse peso do pulso por quadro
+ * @returns {(frame: number, bin: number) => number}
+ */
 function elementMask(chairId, rate, masks, sideCurve, stft, beatPulse) {
   const bins = masks.bins;
   return (frame, bin) => {
-    const freq = binFreq(bin, stft.nfft, rate);
-    const h = masks.harmonic[frame * bins + binIndex(bin, stft.nfft)];
+    const freq = (bin * rate) / stft.nfft;
+    const h = masks.harmonic[frame * bins + bin];
     const p = 1 - h;
     const side = sideCurve[Math.min(sideCurve.length - 1, Math.floor((frame * stft.hop) / 2048))] ?? 0;
     const pulse = beatPulse ? 0.55 + 0.45 * (beatPulse[frame] ?? 0) : 1;
@@ -178,28 +187,36 @@ export function layerSourceLabel(layer) {
   }
 }
 
-async function computeStft(mono, hop, jobId, onRatio) {
+/**
+ * @typedef {{ re: Float32Array, im: Float32Array, frames: number, bins: number, nfft: number, hop: number, pad: number, window: Float32Array, length: number }} Stft
+ */
+
+/**
+ * STFT centrada: NFFT/2 de zeros em cada ponta, para toda amostra real cair em dois quadros.
+ * Guarda só o meio espectro (bins 0…NFFT/2), porque a entrada é real.
+ * @param {Float32Array} mono sinal de entrada
+ * @returns {Promise<Stft | null>} null quando o sinal é mais curto que um quadro
+ */
+export async function computeStft(mono) {
+  if (mono.length < NFFT) return null;
   const window = hann(NFFT);
-  const frames = Math.floor((mono.length - NFFT) / hop) + 1;
-  if (frames < 2) return null;
-  const re = new Float32Array(frames * NFFT);
-  const im = new Float32Array(frames * NFFT);
+  const pad = NFFT / 2;
+  const bins = NFFT / 2 + 1;
+  const frames = Math.floor((mono.length - 1) / HOP) + 2;
+  const re = new Float32Array(frames * bins);
+  const im = new Float32Array(frames * bins);
   const frameRe = new Float32Array(NFFT);
   const frameIm = new Float32Array(NFFT);
   for (let frame = 0; frame < frames; frame += 1) {
-    frameRe.fill(0);
     frameIm.fill(0);
-    const offset = frame * hop;
+    const offset = frame * HOP - pad;
     for (let index = 0; index < NFFT; index += 1) frameRe[index] = (mono[offset + index] || 0) * window[index];
     fft(frameRe, frameIm);
-    re.set(frameRe, frame * NFFT);
-    im.set(frameIm, frame * NFFT);
-    if (frame % 24 === 0) {
-      onRatio(frame / frames);
-      await wait(0);
-    }
+    re.set(frameRe.subarray(0, bins), frame * bins);
+    im.set(frameIm.subarray(0, bins), frame * bins);
+    if (frame % 24 === 0) await wait(0);
   }
-  return { re, im, frames, nfft: NFFT, hop, window, length: mono.length };
+  return { re, im, frames, bins, nfft: NFFT, hop: HOP, pad, window, length: mono.length };
 }
 
 async function refineHarmonicMasks(stft, masks) {
@@ -245,14 +262,9 @@ function subtractBleed(target, source, amount) {
 }
 
 async function harmonicMasks(stft, radius = 8) {
-  const bins = stft.nfft / 2 + 1;
+  const bins = stft.bins;
   const mag = new Float32Array(stft.frames * bins);
-  for (let frame = 0; frame < stft.frames; frame += 1) {
-    for (let bin = 0; bin < bins; bin += 1) {
-      const index = frame * stft.nfft + bin;
-      mag[frame * bins + bin] = Math.hypot(stft.re[index], stft.im[index]);
-    }
-  }
+  for (let index = 0; index < mag.length; index += 1) mag[index] = Math.hypot(stft.re[index], stft.im[index]);
   const harmonicMedian = new Float32Array(mag.length);
   const percussiveMedian = new Float32Array(mag.length);
   const scratch = new Float32Array(radius * 2 + 1);
@@ -280,7 +292,7 @@ async function harmonicMasks(stft, radius = 8) {
     }
     if (frame % 32 === 0) await wait(0);
   }
-  const harmonic = new Float32Array(mag.length);
+  const harmonic = harmonicMedian;
   let hSum = 0;
   for (let index = 0; index < mag.length; index += 1) {
     const tone = harmonicMedian[index] * harmonicMedian[index];
@@ -291,40 +303,45 @@ async function harmonicMasks(stft, radius = 8) {
   return { harmonic, bins, meanHarmonic: hSum / (mag.length || 1) };
 }
 
-async function istft(stft, maskAt, jobId) {
-  const out = new Float32Array(stft.length);
-  const norm = new Float32Array(stft.length);
-  const re = new Float32Array(stft.nfft);
-  const im = new Float32Array(stft.nfft);
+/**
+ * ISTFT por overlap-add ponderado, com a máscara aplicada no meio espectro e espelhada.
+ * Devolve exatamente `stft.length` amostras, já sem o padding da STFT centrada.
+ * @param {Stft} stft espectro de `computeStft`
+ * @param {(frame: number, bin: number) => number} maskAt ganho real por quadro e bin (0…NFFT/2)
+ * @returns {Promise<Float32Array>}
+ */
+export async function istft(stft, maskAt) {
+  const { nfft, bins, hop, pad, window } = stft;
+  const span = (stft.frames - 1) * hop + nfft;
+  const out = new Float32Array(span);
+  const norm = new Float32Array(span);
+  const re = new Float32Array(nfft);
+  const im = new Float32Array(nfft);
   for (let frame = 0; frame < stft.frames; frame += 1) {
-    for (let bin = 0; bin < stft.nfft; bin += 1) {
+    for (let bin = 0; bin < bins; bin += 1) {
       const mask = maskAt(frame, bin);
-      const index = frame * stft.nfft + bin;
+      const index = frame * bins + bin;
       re[bin] = stft.re[index] * mask;
       im[bin] = stft.im[index] * mask;
     }
+    for (let bin = 1; bin < bins - 1; bin += 1) {
+      re[nfft - bin] = re[bin];
+      im[nfft - bin] = -im[bin];
+    }
     ifft(re, im);
-    const offset = frame * stft.hop;
-    for (let index = 0; index < stft.nfft; index += 1) {
-      if (offset + index >= out.length) break;
-      out[offset + index] += re[index] * stft.window[index];
-      norm[offset + index] += stft.window[index] * stft.window[index];
+    const offset = frame * hop;
+    for (let index = 0; index < nfft; index += 1) {
+      out[offset + index] += re[index] * window[index];
+      norm[offset + index] += window[index] * window[index];
     }
     if (frame % 18 === 0) await wait(0);
   }
-  for (let index = 0; index < out.length; index += 1) {
-    if (norm[index] > 1e-8) out[index] /= norm[index];
+  const samples = new Float32Array(stft.length);
+  for (let index = 0; index < samples.length; index += 1) {
+    const weight = norm[pad + index];
+    samples[index] = weight > 1e-3 ? out[pad + index] / weight : 0;
   }
-  return out;
-}
-
-function binIndex(bin, nfft) {
-  return bin < nfft / 2 + 1 ? bin : nfft - bin;
-}
-
-function binFreq(bin, nfft, rate) {
-  const capped = bin > nfft / 2 ? nfft - bin : bin;
-  return (capped * rate) / nfft;
+  return samples;
 }
 
 function bandGain(freq, lo, hi, rate) {
@@ -336,9 +353,15 @@ function bandGain(freq, lo, hi, rate) {
   return 1;
 }
 
+/**
+ * Ganho para o pico real (todas as amostras) chegar em `target`.
+ * @param {Float32Array} samples
+ * @param {number} target
+ * @returns {Float32Array}
+ */
 function normalizePeak(samples, target) {
   let peak = 0;
-  for (let index = 0; index < samples.length; index += 16) peak = Math.max(peak, Math.abs(samples[index]));
+  for (let index = 0; index < samples.length; index += 1) peak = Math.max(peak, Math.abs(samples[index]));
   if (peak < 1e-8) return samples;
   const gain = target / peak;
   const out = new Float32Array(samples.length);
@@ -405,10 +428,15 @@ function ifft(re, im) {
   }
 }
 
+/**
+ * Hann periódica, que soma constante com hop NFFT/2.
+ * @param {number} n
+ * @returns {Float32Array}
+ */
 function hann(n) {
   const window = new Float32Array(n);
   for (let index = 0; index < n; index += 1) {
-    window[index] = 0.5 * (1 - Math.cos((2 * Math.PI * index) / (n - 1)));
+    window[index] = 0.5 * (1 - Math.cos((2 * Math.PI * index) / n));
   }
   return window;
 }

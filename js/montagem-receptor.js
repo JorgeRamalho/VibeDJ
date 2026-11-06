@@ -4,7 +4,7 @@
 
 import { CHAIRS } from "./clonagem-model.js";
 import { buildElementInventory } from "./inventario-elementos.js";
-import { extractElementLayers } from "./extracao-elementos.js";
+import { extractElementLayers } from "./extracao-elementos.js?v=4";
 import { mixdown, scanOverview } from "./leitura-audio-core.js";
 import { bpmDaReceita, compassosEscolhidos, elementActiveAtStep, sectionOf } from "./realizacao-receptor.js";
 

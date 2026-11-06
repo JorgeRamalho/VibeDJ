@@ -11,3 +11,11 @@
   from = "/sitemap.xml"
   to = "/meta/sitemap.xml"
   status = 200
+
+# COEP só nesta página, para o WASM do onnxruntime usar mais de uma thread.
+# As fontes da página são locais: o header bloqueia folha de estilo de outro domínio.
+[[headers]]
+  for = "/pages/laboratorio.html"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
