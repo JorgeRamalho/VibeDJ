@@ -9,7 +9,7 @@ Academia de música eletrônica para DJs: trilha, conceitos, sala, simulador de 
 | Home | `index.html` |
 | Páginas | `pages/*.html` |
 | Estilos globais | `css/tokens.css`, `css/base.css`, `css/academy.css` |
-| Laboratório | `pages/laboratorio.html`, `css/laboratorio.css`, `js/analise.js`, `js/grade-cadeiras.js`, `js/laboratorio.js` |
+| Laboratório | `pages/laboratorio.html`, `css/laboratorio.css`, `js/analise.js`, `js/grade-cadeiras.js`, `js/laboratorio.js`, `js/isolamento-cadeiras.js`, `js/stems-import.js`, `js/extracao-elementos.js` |
 | Simulador | `pages/simulador.html`, `js/simulator.js` |
 | Clonagem (docs) | `docs/clonagem/` |
 | Analisador CLI (opcional) | `scripts/analisador/` |

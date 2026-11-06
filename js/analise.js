@@ -1,8 +1,10 @@
 import { CHAIRS } from "./clonagem-model.js";
 import { estimateMusicalKeyFromMono } from "./camelot-key.js";
 import { downloadBlob, encodeMp3Blob, encodeWavBlob } from "./export-audio.js";
-import { extractElementLayers } from "./extracao-elementos.js";
-import { buildElementInventory, renderInventarioCards } from "./inventario-elementos.js";
+import { extractElementLayers } from "./extracao-elementos.js?v=3";
+import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
+import { isolationSummary, renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { bindStemsPanel } from "./stems-import.js";
 
 const ACCEPT = "audio/*,.mp3,.wav,.wave,.flac,.ogg,.oga,.m4a,.aac,.aiff,.aif,.webm";
 const MAX_BYTES = 80 * 1024 * 1024;
@@ -38,12 +40,29 @@ function boot(root) {
     job: 0,
     inventario: null,
     elementLayers: null,
+    extractionBase: null,
     elementExtractPromise: null,
     wavBusy: false,
   };
 
   root.innerHTML = renderShell();
   const ui = bind(root);
+  const stemsLeitura = bindStemsPanel({
+    root,
+    idPrefix: "leitura",
+    getCtx: ensureCtx,
+    getLayers: () => state.elementLayers,
+    setLayers: (layers) => {
+      state.elementLayers = layers;
+      paintInventario();
+      syncBaixarButton();
+      publishReport();
+    },
+    getExtractionBase: () => state.extractionBase,
+    setExtractionBase: (base) => {
+      state.extractionBase = base;
+    },
+  });
 
   ui.input.addEventListener("change", () => {
     const file = ui.input.files && ui.input.files[0];
@@ -96,6 +115,9 @@ function boot(root) {
     halt();
     state.layers.clear();
     state.elementLayers = null;
+    state.extractionBase = null;
+    stemsLeitura.resetLabels();
+    stemsLeitura.hide();
     paintLayers();
     syncBaixarButton();
     ui.result.hidden = true;
@@ -490,13 +512,20 @@ function boot(root) {
         const layers = await extractElementLayers(state.buffer, {
           onProgress: (msg) => say(msg),
           job: { id: mine },
+          bpm: state.overview?.bpm,
+          qualityMode: "fino",
         });
         state.elementLayers = layers;
+        state.extractionBase = { ...layers };
+        stemsLeitura.show();
         paintInventario();
         syncBaixarButton();
         publishReport();
+        const summary = isolationSummary(layers);
         const count = CHAIRS.filter((chair) => layers[chair.id]).length;
-        say(`${count} elementos separados. Use Baixar elementos da track para gravar todos em ${exportFormat().toUpperCase()}.`);
+        say(
+          `${count} elementos (${summary.extracao} extração · média ${summary.media_qualidade}%). Importe stems Demucs para isolamento fino.`,
+        );
       } catch (err) {
         state.elementLayers = null;
         syncBaixarButton();
@@ -615,6 +644,7 @@ function boot(root) {
       mono: state.mono,
       rate: state.buffer.sampleRate,
       duration: state.duration,
+      canais: state.buffer.numberOfChannels,
       layers: state.layers.size ? state.layers : null,
       elementLayers: state.elementLayers,
     });
@@ -628,7 +658,11 @@ function boot(root) {
 
   function report() {
     const overview = state.overview || {};
+    const inventario = state.inventario;
+    const checklist = inventario ? leituraChecklist(inventario) : null;
     return {
+      tipo: "leitura-arquivo-vibedj",
+      versao: 2,
       arquivo: state.name || "",
       origem: "arquivo local, lido só neste navegador",
       aviso: "Estimativas de mix. Não são as faixas da sessão e não formam uma cópia da obra.",
@@ -640,15 +674,26 @@ function boot(root) {
       centroide_hz: overview.centroid ? Math.round(overview.centroid) : null,
       lados_energia: overview.side != null ? round(overview.side, 3) : null,
       faixas: overview.bands || [],
-      inventario_elementos: state.inventario,
+      leitura: checklist,
+      inventario_elementos: inventario,
       elementos_wav: state.elementLayers
         ? Object.fromEntries(
             CHAIRS.map((chair) => {
               const layer = state.elementLayers[chair.id];
-              return [chair.id, layer ? { fonte: layer.source, qualidade: layer.qualidade ?? null } : null];
+              return [
+                chair.id,
+                layer
+                  ? {
+                      fonte: layer.source,
+                      qualidade: layer.qualidade ?? null,
+                      stem: layer.source === "stem" ? layer.stemName ?? true : null,
+                    }
+                  : null,
+              ];
             }),
           )
         : null,
+      isolamento: state.elementLayers ? isolationSummary(state.elementLayers) : null,
       trecho: {
         inicio_segundos: round(state.excerptStart, 2),
         duracao_segundos: state.excerptSeconds,
@@ -745,6 +790,7 @@ function renderShell() {
       <div class="layer-grid">${layers}</div>
       <p class="lab-caption">Centro e lados vêm do estéreo. Percussivo e harmônico separam ataque de nota. As faixas cortam o espectro. Nenhuma delas é o kick, o baixo ou o vocal isolados da sessão.</p>
       <div data-inventario-wrap hidden></div>
+      ${renderStemsPanelHtml("leitura")}
       <h3>Leitura</h3>
       <pre data-report></pre>
       <button type="button" class="btn btn--ghost" data-copy>Copiar JSON</button>

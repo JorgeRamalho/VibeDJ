@@ -1,8 +1,11 @@
 import { ACCEPT, decodeAudioFile, scanOverview } from "./leitura-audio-core.js";
-import { buildElementInventory, renderInventarioCards } from "./inventario-elementos.js";
+import { estimateMusicalKeyFromMono } from "./camelot-key.js";
+import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
 import { CHAIRS, mergeLabPacket } from "./clonagem-model.js";
 import { compassosEscolhidos, realizarELer } from "./realizacao-receptor.js";
-import { extractElementLayers, layerSourceLabel } from "./extracao-elementos.js";
+import { extractElementLayers, layerSourceLabel } from "./extracao-elementos.js?v=3";
+import { renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { bindStemsPanel } from "./stems-import.js";
 import { montarTrackRealELer, renderElementStemsForEdicao } from "./montagem-receptor.js";
 import { downloadTrack, downloadWav } from "./export-audio.js";
 
@@ -227,11 +230,63 @@ function boot(root) {
     const input = root.querySelector(`[data-file-${id}]`);
     input.addEventListener("change", () => loadDonor(id, input.files?.[0]));
     bindDrop(root.querySelector(`[data-drop-${id}]`), (file) => loadDonor(id, file));
-    CHAIRS.forEach((chair) => {
-      const stemInput = root.querySelector(`[data-stem-${id}-${chair.id}]`);
-      stemInput?.addEventListener("change", () => loadStem(id, chair.id, stemInput));
-    });
   });
+
+  const stemsPanels = {
+    a: bindDonorStems("a"),
+    b: bindDonorStems("b"),
+  };
+
+  function bindDonorStems(id) {
+    return bindStemsPanel({
+      root,
+      idPrefix: id,
+      getCtx: () => {
+        if (!ctx) ctx = new AudioContext();
+        return ctx;
+      },
+      getLayers: () => donors[id].elementLayers,
+      setLayers: (layers) => {
+        donors[id].elementLayers = layers;
+        donors[id].elementLayersDirty = false;
+      },
+      getExtractionBase: () => donors[id].extractionBase,
+      setExtractionBase: (base) => {
+        donors[id].extractionBase = base;
+      },
+      onStemMeta: (chairId, layer) => {
+        if (layer) {
+          donors[id].stems[chairId] = {
+            mono: layer.mono,
+            rate: layer.rate,
+            name: layer.stemName || "",
+          };
+        } else {
+          delete donors[id].stems[chairId];
+        }
+      },
+      onUpdated: () => {
+        patchDonorInventario(id);
+        if (ui.dialog.open) paintMesa();
+        publish();
+      },
+    });
+  }
+
+  function patchDonorInventario(id) {
+    const slot = donors[id];
+    if (!slot.inventario || !slot.elementLayers) return;
+    CHAIRS.forEach((chair) => {
+      const layer = slot.elementLayers[chair.id];
+      if (!layer) return;
+      const el = slot.inventario.elementos[chair.id];
+      el.extracao = layer.source;
+      el.qualidade_extracao = layer.qualidade ?? null;
+      if (layer.source === "stem") el.confianca = Math.max(el.confianca, 95);
+    });
+    const body = root.querySelector(`[data-body-${id}]`);
+    if (body && !body.hidden) body.innerHTML = donorSummary(slot);
+  }
 
   syncChrome();
 
@@ -248,19 +303,25 @@ function boot(root) {
       if (!ctx) ctx = new AudioContext();
       await ctx.resume();
       const decoded = await decodeAudioFile(file, ctx);
+      status.textContent = `Medindo espectro de ${file.name}…`;
+      const overview = await scanOverview(decoded.mono, decoded.rate, decoded.buffer);
       status.textContent = `Separando elementos de ${file.name}…`;
       const elementLayers = await extractElementLayers(decoded.buffer, {
         onProgress: (msg) => {
           status.textContent = msg;
         },
+        bpm: overview.bpm,
+        qualityMode: "fino",
       });
+      status.textContent = `Lendo tonalidade (Camelot) de ${file.name}…`;
+      overview.key = await estimateMusicalKeyFromMono(decoded.mono, decoded.rate);
       status.textContent = `Medindo inventário de ${file.name}…`;
-      const overview = await scanOverview(decoded.mono, decoded.rate, decoded.buffer);
       const inventario = buildElementInventory({
         overview,
         mono: decoded.mono,
         rate: decoded.rate,
         duration: decoded.duration,
+        canais: decoded.buffer.numberOfChannels,
         elementLayers,
       });
       inventario.arquivo = decoded.name;
@@ -279,11 +340,8 @@ function boot(root) {
       };
       body.hidden = false;
       body.innerHTML = donorSummary(donors[id]);
-      const stemsPanel = root.querySelector(`[data-stems-${id}]`);
-      if (stemsPanel) {
-        stemsPanel.hidden = false;
-        resetStemLabels(id);
-      }
+      stemsPanels[id].show();
+      stemsPanels[id].resetLabels();
       status.textContent = "Inventário pronto. Os elementos entram na mesa.";
       const readyNow = bothReady();
       syncChrome();
@@ -514,49 +572,6 @@ function boot(root) {
     }
   }
 
-  async function loadStem(donorId, chairId, input) {
-    const file = input.files?.[0];
-    const label = root.querySelector(`[data-stem-label-${donorId}-${chairId}]`);
-    if (!file) {
-      delete donors[donorId].stems[chairId];
-      if (label) label.textContent = "Nenhum";
-      if (donors[donorId].extractionBase?.[chairId] && donors[donorId].elementLayers) {
-        donors[donorId].elementLayers[chairId] = donors[donorId].extractionBase[chairId];
-      }
-      return;
-    }
-    if (label) label.textContent = `Lendo ${file.name}…`;
-    try {
-      if (!ctx) ctx = new AudioContext();
-      const decoded = await decodeAudioFile(file, ctx);
-      donors[donorId].stems[chairId] = {
-        mono: decoded.mono,
-        rate: decoded.rate,
-        name: decoded.name,
-      };
-      if (!donors[donorId].elementLayers) donors[donorId].elementLayers = {};
-      donors[donorId].elementLayers[chairId] = {
-        mono: decoded.mono,
-        rate: decoded.rate,
-        source: "stem",
-        qualidade: 100,
-      };
-      if (label) label.textContent = shortFileName(decoded.name);
-    } catch (err) {
-      delete donors[donorId].stems[chairId];
-      if (label) label.textContent = err instanceof Error ? err.message : "Erro";
-    }
-  }
-
-  function resetStemLabels(donorId) {
-    CHAIRS.forEach((chair) => {
-      const label = root.querySelector(`[data-stem-label-${donorId}-${chair.id}]`);
-      const input = root.querySelector(`[data-stem-${donorId}-${chair.id}]`);
-      if (input) input.value = "";
-      if (label) label.textContent = "Nenhum";
-    });
-  }
-
   async function playResult() {
     if (!resultBuffer) return;
     stopPreview(false);
@@ -678,6 +693,12 @@ function boot(root) {
       arquivo: slot.name,
       bpm_estimado: slot.inventario?.bpm_estimado ?? null,
       duracao_segundos: slot.inventario?.duracao_segundos ?? null,
+      amostragem_hz: slot.inventario?.amostragem_hz ?? slot.rate ?? null,
+      canais: slot.inventario?.canais ?? null,
+      tonalidade: slot.inventario?.tonalidade ?? null,
+      camelot: slot.inventario?.camelot ?? null,
+      confianca: slot.inventario?.confianca ?? null,
+      leitura: slot.inventario ? leituraChecklist(slot.inventario) : null,
     };
   }
 
@@ -706,14 +727,6 @@ function boot(root) {
 }
 
 function donorCard(id, title) {
-  const stemRows = CHAIRS.map(
-    (chair) => `<li class="stems-row">
-      <label class="stems-row__label">${chair.label}
-        <input type="file" accept="${ACCEPT}" data-stem-${id}-${chair.id}>
-        <span class="stems-row__name" data-stem-label-${id}-${chair.id}>Nenhum</span>
-      </label>
-    </li>`,
-  ).join("");
   return `<article class="transplante-slot transplante-slot--${id}">
     <header>
       <p class="eyebrow">${title}</p>
@@ -726,11 +739,7 @@ function donorCard(id, title) {
     </label>
     <p class="lab-status" data-status-${id} aria-live="polite">Aguardando arquivo.</p>
     <div data-body-${id} hidden></div>
-    <details class="stems-panel" data-stems-${id} hidden>
-      <summary>Stems UVR/Demucs (opcional)</summary>
-      <p class="stems-panel__hint">Substituem a extração automática da cadeira. Ideal para edição fina no LMMS.</p>
-      <ul class="stems-list">${stemRows}</ul>
-    </details>
+    ${renderStemsPanelHtml(id)}
   </article>`;
 }
 
@@ -740,7 +749,10 @@ function donorSummary(slot) {
     return `<li class="mesa-chip mesa-chip--${el.presenca}">${el.rotulo}<small>${el.presenca}</small></li>`;
   }).join("");
   const bpm = slot.inventario.bpm_estimado ? `${slot.inventario.bpm_estimado} BPM` : "BPM —";
-  return `<p class="inventario-head"><strong>${slot.name}</strong> · ${bpm} · ${formatTime(slot.duration)}</p>
+  const key = slot.inventario.camelot
+    ? `${slot.inventario.camelot} · ${slot.inventario.tonalidade || "tonalidade"}`
+    : "Camelot —";
+  return `<p class="inventario-head"><strong>${slot.name}</strong> · ${bpm} · ${key} · ${formatTime(slot.duration)}</p>
     <ul class="mesa-chips">${chips}</ul>`;
 }
 

@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="../css/tokens.css">
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/academy.css">
-  <link rel="stylesheet" href="../css/laboratorio.css?v=13">
+  <link rel="stylesheet" href="../css/laboratorio.css?v=14">
 </head>
 <body data-page="laboratorio">
   <a class="skip" href="#conteudo">Ir para o conteúdo</a>
@@ -47,7 +47,7 @@
       <h2>O que esta bancada faz</h2>
       <p>O pedido de partida era este: ler os elementos de uma track eletrônica e substituí-los por outros parecidos. Isso não é um remix do arquivo final. É estudar a construção — andamento, frase, quem entra, quem sai — e produzir outra peça com a mesma lógica e com identidade própria.</p>
       <p>Há um limite físico no meio do caminho. Um bounce estéreo não guarda o projeto. Não diz qual sintetizador, qual nota MIDI, qual automação. Separar fontes é estimar. A mistura soma sinais; quando dois elementos ocupam a mesma região ao mesmo tempo, a conta não tem uma única resposta. A stem ajuda a ouvir. Não devolve a sessão.</p>
-      <p>A leitura aqui em cima abre um arquivo seu: MP3, WAV, FLAC, OGG, M4A e o que o navegador conseguir decodificar. O arquivo não sai do computador. Você vê forma de onda, espectrograma, andamento e o inventário. Ao terminar, a mesma extração da mesa separa kick, clap, hi-hat, baixo, stab, transição, percussão e vocal / chop, um a um. <strong>Baixar elementos da track</strong> grava cada cadeira em WAV ou MP3. É estimativa da mix: pode haver bleed. Não devolve a sessão nem o master.</p>
+      <p>A leitura aqui em cima abre um arquivo seu: MP3, WAV, FLAC, OGG, M4A e o que o navegador conseguir decodificar. O arquivo não sai do computador. Você vê forma de onda, espectrograma, andamento e o inventário. Ao terminar, a extração fina (HPSS + pulso de BPM) separa kick, clap, hi-hat, baixo, stab, transição, percussão e vocal / chop. Para **isolamento fino**, importe stems Demucs/UVR no painel abaixo do inventário ou rode <code>scripts/analisador/demucs_cadeiras.py</code> no PC. <strong>Baixar elementos da track</strong> grava cada cadeira em WAV ou MP3.</p>
       <p>A bancada de baixo continua sintetizada: 124 BPM, 4/4, Lá menor, dezesseis compassos. O número 124 é valor de estudo, não a leitura de uma faixa.</p>
       <h2>Quatro gestos</h2>
       <ol>
@@ -171,8 +171,8 @@
     <div class="wrap"><small>VibeDJ · laboratório de engenharia reversa. A referência é sintetizada aqui. Pratique na <a href="simulador.html">cabine</a>.</small></div>
   </footer>
   <script type="module" src="../js/nav.js"></script>
-  <script type="module" src="../js/analise.js?v=6"></script>
-  <script type="module" src="../js/transplante-lab.js?v=12"></script>
+  <script type="module" src="../js/analise.js?v=9"></script>
+  <script type="module" src="../js/transplante-lab.js?v=15"></script>
   <script type="module" src="../js/grade-cadeiras.js"></script>
   <script type="module" src="../js/laboratorio.js"></script>
 </body>

@@ -9,10 +9,18 @@ const NFFT = 2048;
 
 /**
  * @param {{
- *   overview: { bpm?: number, bands?: { id: string, share: number }[], side?: number, centroid?: number, note?: string },
+ *   overview: {
+ *     bpm?: number,
+ *     bands?: { id: string, label?: string, share: number }[],
+ *     side?: number,
+ *     centroid?: number,
+ *     note?: string,
+ *     key?: { nome?: string, camelot?: string, confianca?: number, nota?: string, vizinhos?: string[], relativo?: string, alternativa?: { camelot?: string, nome?: string } },
+ *   },
  *   mono: Float32Array,
  *   rate: number,
  *   duration: number,
+ *   canais?: number,
  *   layers?: Map<string, { share: number, hint?: string }> | Record<string, { share: number }>,
  *   elementLayers?: Record<string, { qualidade?: number, source?: string }>,
  * }} input
@@ -24,6 +32,8 @@ export function buildElementInventory(input) {
   const fourOnFloor = bpm > 0 ? scoreFourOnFloor(mono, rate, bpm) : 0;
   const percHarm = percussiveHarmonicRatio(layers);
   const side = overview.side ?? 0;
+  const key = overview.key || null;
+  const canais = input.canais ?? null;
 
   const ctx = {
     bandShare,
@@ -39,15 +49,82 @@ export function buildElementInventory(input) {
     CHAIRS.map((chair) => [chair.id, describeElement(chair.id, chair.label, ctx, elementLayers?.[chair.id])]),
   );
 
+  const bands = (overview.bands || []).map((band) => ({
+    id: band.id,
+    label: band.label || band.id,
+    share: round4(band.share),
+  }));
+
   return {
     tipo: "inventario-elementos-vibedj",
-    versao: 1,
-    bpm_estimado: bpm ? Math.round(bpm * 10) / 10 : null,
-    duracao_segundos: Math.round(duration * 100) / 100,
+    versao: 2,
+    duracao_segundos: round2(duration),
+    duracao: formatClock(duration),
+    amostragem_hz: rate || null,
+    amostragem: rate ? `${rate} Hz` : null,
+    canais,
+    canais_rotulo: canais == null ? null : canais === 1 ? "Mono" : `${canais} canais`,
+    andamento: bpm ? `${round1(bpm)} BPM` : null,
+    bpm_estimado: bpm ? round1(bpm) : null,
+    brilho_hz: overview.centroid ? Math.round(overview.centroid) : null,
+    brilho: overview.centroid ? `${Math.round(overview.centroid)} Hz` : null,
+    lados: round3(side),
+    lados_rotulo: `${Math.round(side * 100)}%`,
+    tonalidade: key?.nome ?? null,
+    camelot: key?.camelot ?? null,
+    confianca: key?.confianca ?? null,
+    tonalidade_camelot: key,
+    energia_por_faixa: bands,
+    imagem_estereo: {
+      centro: round3(1 - side),
+      lados: round3(side),
+    },
+    ataque_harmonia_trecho: {
+      ataque: round3(percHarm.percussive),
+      harmonia: round3(percHarm.harmonic),
+    },
+    sub: round4(bandShare("sub")),
+    grave: round4(bandShare("grave")),
+    corpo: round4(bandShare("corpo")),
+    presenca: round4(bandShare("presenca")),
+    ar: round4(bandShare("ar")),
+    harmonico: round3(percHarm.harmonic),
     leitura_andamento: overview.note || null,
     aviso:
       "Cada campo é estimativa de mix estéreo. Use para marcar a grade e planejar transplante de papéis — não substitui stems nem MIDI.",
     elementos,
+  };
+}
+
+/** Bloco plano para leitura do JSON — nomes alinhados à bancada. */
+export function leituraChecklist(inventario) {
+  const el = inventario?.elementos || {};
+  return {
+    duracao: inventario?.duracao ?? null,
+    amostragem: inventario?.amostragem ?? null,
+    canais: inventario?.canais_rotulo ?? inventario?.canais ?? null,
+    andamento: inventario?.andamento ?? null,
+    brilho: inventario?.brilho ?? null,
+    lados: inventario?.lados_rotulo ?? null,
+    tonalidade: inventario?.tonalidade ?? null,
+    camelot: inventario?.camelot ?? null,
+    confianca: inventario?.confianca ?? null,
+    energia_por_faixa: inventario?.energia_por_faixa ?? [],
+    imagem_estereo: inventario?.imagem_estereo ?? null,
+    ataque_harmonia_trecho: inventario?.ataque_harmonia_trecho ?? null,
+    sub: inventario?.sub ?? null,
+    grave: inventario?.grave ?? null,
+    corpo: inventario?.corpo ?? null,
+    presenca: inventario?.presenca ?? null,
+    harmonico: inventario?.harmonico ?? null,
+    kick: el.kick ?? null,
+    clap: el.clap ?? null,
+    hi_hat: el.hat ?? null,
+    baixo: el.bass ?? null,
+    stab: el.stab ?? null,
+    transicao: el.fx ?? null,
+    percussao: el.perc ?? null,
+    vocal: el.vocal ?? null,
   };
 }
 
@@ -164,6 +241,29 @@ function clamp(v, lo, hi) {
   return Math.min(hi, Math.max(lo, v));
 }
 
+function round1(value) {
+  return Math.round(value * 10) / 10;
+}
+
+function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+
+function round3(value) {
+  return Math.round(value * 1000) / 1000;
+}
+
+function round4(value) {
+  return Math.round(value * 10000) / 10000;
+}
+
+function formatClock(seconds) {
+  const whole = Math.max(0, Math.floor(seconds || 0));
+  const minutes = Math.floor(whole / 60);
+  const remain = whole % 60;
+  return `${minutes}:${String(remain).padStart(2, "0")}`;
+}
+
 function kickRead(ctx) {
   if (ctx.bandShare("sub") < 0.06) return "Pouco corpo em sub. Kick pode estar fraco ou filtrado na mix.";
   if (ctx.fourOnFloor > 0.55) return "Pulso grave regular — compatível com four-on-the-floor.";
@@ -270,7 +370,7 @@ export function renderInventarioCards(inventario) {
         <dl class="inventario-meta">
           <div><dt>Faixa</dt><dd>${el.faixa_hz}</dd></div>
           <div><dt>Confiança</dt><dd>${el.confianca}%</dd></div>
-          ${el.qualidade_extracao != null ? `<div><dt>Extração</dt><dd>${el.qualidade_extracao}%</dd></div>` : ""}
+          ${el.qualidade_extracao != null ? `<div><dt>${el.extracao === "stem" ? "Stem IA" : el.extracao === "filtro" ? "Filtro" : "Extração"}</dt><dd>${el.qualidade_extracao}%</dd></div>` : ""}
         </dl>
       </article>`;
     }).join("")}

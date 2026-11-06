@@ -22,6 +22,8 @@ Use stems **só para estudo e montagem no laboratório**. O master final liberá
 
 Com **6 stems** (htdemucs): use `drums` para percussão, exporte kick/hat manualmente se o UVR permitir, ou anexe WAVs já renomeados por elemento.
 
+Guia completo: [isolamento-fino.md](./isolamento-fino.md).
+
 ## Híbrido
 
 - Cadeira **com** stem → montagem usa o arquivo anexado.

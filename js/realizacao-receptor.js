@@ -65,6 +65,7 @@ export async function realizarELer(input) {
     mono,
     rate: buffer.sampleRate,
     duration: buffer.duration,
+    canais: buffer.numberOfChannels,
   });
   inventario.arquivo = input.nome;
   const leitura = {

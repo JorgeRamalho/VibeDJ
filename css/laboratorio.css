@@ -1244,6 +1244,21 @@
   color: var(--faint);
 }
 
+.stems-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: center;
+  margin: 0 0 12px;
+}
+
+.stems-panel__status {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--sea);
+  flex: 1 1 12rem;
+}
+
 .stems-list {
   margin: 0;
   padding: 0;

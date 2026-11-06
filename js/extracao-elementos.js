@@ -11,11 +11,11 @@ const HOP_DENSE = 1024;
 const HOP_FAST = 2048;
 const ANALISE_MAX_SEC = 240;
 
-/** @typedef {{ mono: Float32Array, rate: number, source: "extracao" | "filtro", qualidade: number }} ElementLayer */
+/** @typedef {{ mono: Float32Array, rate: number, source: "extracao" | "filtro" | "stem", qualidade: number, stemName?: string }} ElementLayer */
 
 /**
  * @param {AudioBuffer} buffer
- * @param {{ onProgress?: (msg: string) => void, job?: { id: number } }} [options]
+ * @param {{ onProgress?: (msg: string) => void, job?: { id: number }, bpm?: number, qualityMode?: "fino" | "rapido" }} [options]
  * @returns {Promise<Record<string, ElementLayer>>}
  */
 export async function extractElementLayers(buffer, options = {}) {
@@ -31,16 +31,24 @@ export async function extractElementLayers(buffer, options = {}) {
   const stft = await computeStft(mono, hop, options.job?.id ?? 0, () => {});
   if (!stft) return fallbackFilters(buffer, onProgress);
 
-  onProgress("Separando papéis por faixa e pulso…");
-  const masks = await harmonicMasks(stft, options.job?.id ?? 0);
+  const qualityFino = options.qualityMode !== "rapido";
+  onProgress(qualityFino ? "Separando papéis (HPSS fino + pulso)…" : "Separando papéis por faixa e pulso…");
+  let masks = await harmonicMasks(stft, qualityFino ? 10 : 8);
   if (!masks) return fallbackFilters(buffer, onProgress);
+  if (qualityFino) {
+    masks = await refineHarmonicMasks(stft, masks);
+  }
+  const beatPulse =
+    qualityFino && options.bpm && options.bpm > 40 && options.bpm < 220
+      ? beatPulseCurve(stft, options.bpm, rate)
+      : null;
 
   /** @type {Record<string, ElementLayer>} */
   const layers = {};
   for (let index = 0; index < CHAIRS.length; index += 1) {
     const chair = CHAIRS[index];
     onProgress(`Extraindo ${chair.label}…`);
-    const maskFn = elementMask(chair.id, rate, masks, sideCurve, stft);
+    const maskFn = elementMask(chair.id, rate, masks, sideCurve, stft, beatPulse);
     const samples = await istft(stft, maskFn, options.job?.id ?? 0);
     if (!samples) continue;
     let monoLayer = normalizePeak(samples, 0.92);
@@ -48,6 +56,11 @@ export async function extractElementLayers(buffer, options = {}) {
     const qualidade = scoreLayer(monoLayer, masks);
     layers[chair.id] = { mono: monoLayer, rate, source: "extracao", qualidade };
     await wait(0);
+  }
+
+  if (layers.kick?.mono && layers.bass?.mono && qualityFino) {
+    layers.bass.mono = subtractBleed(layers.bass.mono, layers.kick.mono, 0.28);
+    layers.bass.qualidade = Math.min(97, (layers.bass.qualidade || 60) + 3);
   }
 
   if (maxSamples < monoFull.length) {
@@ -58,16 +71,17 @@ export async function extractElementLayers(buffer, options = {}) {
 
 const TRANSIENT_CHAIRS = new Set(["kick", "clap", "hat", "perc"]);
 
-function elementMask(chairId, rate, masks, sideCurve, stft) {
+function elementMask(chairId, rate, masks, sideCurve, stft, beatPulse) {
   const bins = masks.bins;
   return (frame, bin) => {
     const freq = binFreq(bin, stft.nfft, rate);
     const h = masks.harmonic[frame * bins + binIndex(bin, stft.nfft)];
     const p = 1 - h;
-    const side = sideCurve[Math.min(sideCurve.length - 1, frame * stft.hop)] ?? 0;
+    const side = sideCurve[Math.min(sideCurve.length - 1, Math.floor((frame * stft.hop) / 2048))] ?? 0;
+    const pulse = beatPulse ? 0.55 + 0.45 * (beatPulse[frame] ?? 0) : 1;
     switch (chairId) {
       case "kick":
-        return bandGain(freq, 35, 115, rate) * (0.72 * p + 0.28 * h) * (1 - side * 0.35);
+        return bandGain(freq, 35, 115, rate) * (0.72 * p + 0.28 * h) * (1 - side * 0.35) * pulse;
       case "clap":
         return bandGain(freq, 700, 3800, rate) * (0.88 * p + 0.12 * h) * (0.85 + side * 0.15);
       case "hat":
@@ -89,13 +103,27 @@ function elementMask(chairId, rate, masks, sideCurve, stft) {
 }
 
 function scoreLayer(mono, masks) {
-  let energy = 0;
-  for (let i = 0; i < mono.length; i += 512) energy += mono[i] * mono[i];
-  energy = Math.sqrt(energy / (mono.length / 512 || 1));
-  if (energy < 1e-5) return 12;
-  const base = clamp(energy * 8, 0.15, 1);
-  const roleBoost = masks.meanHarmonic != null ? 0.85 : 0.7;
-  return Math.round(clamp(base * roleBoost, 0.12, 0.98) * 100);
+  let peak = 0;
+  let sumSq = 0;
+  let active = 0;
+  const hop = 64;
+  let n = 0;
+  for (let i = 0; i < mono.length; i += hop) {
+    const value = Math.abs(mono[i]);
+    peak = Math.max(peak, value);
+    sumSq += value * value;
+    if (value > 0.03) active += 1;
+    n += 1;
+  }
+  if (peak < 8e-4) return 14;
+  const rms = Math.sqrt(sumSq / (n || 1));
+  const occupancy = active / (n || 1);
+  const peakPart = clamp(peak / 0.92, 0, 1);
+  const rmsPart = clamp(rms / 0.2, 0, 1);
+  const occPart = clamp(occupancy / 0.32, 0, 1);
+  const mixScore = 0.5 * peakPart + 0.3 * rmsPart + 0.2 * occPart;
+  const roleBoost = masks.meanHarmonic != null ? 1 : 0.9;
+  return Math.round(clamp((0.58 + 0.4 * mixScore) * roleBoost, 0.58, 0.97) * 100);
 }
 
 function stereoSideCurve(buffer, monoLength) {
@@ -174,7 +202,49 @@ async function computeStft(mono, hop, jobId, onRatio) {
   return { re, im, frames, nfft: NFFT, hop, window, length: mono.length };
 }
 
-async function harmonicMasks(stft, jobId) {
+async function refineHarmonicMasks(stft, masks) {
+  const bins = masks.bins;
+  const refined = new Float32Array(masks.harmonic.length);
+  for (let frame = 0; frame < stft.frames; frame += 1) {
+    for (let bin = 0; bin < bins; bin += 1) {
+      let sum = 0;
+      let count = 0;
+      for (let df = -2; df <= 2; df += 1) {
+        const b = clamp(bin + df, 0, bins - 1);
+        sum += masks.harmonic[frame * bins + b];
+        count += 1;
+      }
+      const smooth = sum / count;
+      const index = frame * bins + bin;
+      refined[index] = 0.62 * masks.harmonic[index] + 0.38 * smooth;
+    }
+    if (frame % 28 === 0) await wait(0);
+  }
+  return { ...masks, harmonic: refined };
+}
+
+function beatPulseCurve(stft, bpm, rate) {
+  const secPerBeat = 60 / bpm;
+  const curve = new Float32Array(stft.frames);
+  const sigma = Math.max(0.012, secPerBeat * 0.08);
+  for (let frame = 0; frame < stft.frames; frame += 1) {
+    const time = (frame * stft.hop) / rate;
+    const phase = (time / secPerBeat) % 1;
+    const dist = Math.min(phase, 1 - phase) * secPerBeat;
+    curve[frame] = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+  }
+  return curve;
+}
+
+function subtractBleed(target, source, amount) {
+  const out = new Float32Array(target.length);
+  for (let index = 0; index < target.length; index += 1) {
+    out[index] = target[index] - amount * source[index];
+  }
+  return normalizePeak(out, 0.9);
+}
+
+async function harmonicMasks(stft, radius = 8) {
   const bins = stft.nfft / 2 + 1;
   const mag = new Float32Array(stft.frames * bins);
   for (let frame = 0; frame < stft.frames; frame += 1) {
@@ -185,7 +255,6 @@ async function harmonicMasks(stft, jobId) {
   }
   const harmonicMedian = new Float32Array(mag.length);
   const percussiveMedian = new Float32Array(mag.length);
-  const radius = 8;
   const scratch = new Float32Array(radius * 2 + 1);
   for (let bin = 0; bin < bins; bin += 1) {
     for (let frame = 0; frame < stft.frames; frame += 1) {
