@@ -13,6 +13,7 @@ Academia de música eletrônica para DJs: trilha, conceitos, sala, simulador de 
 | Simulador | `pages/simulador.html`, `js/simulator.js` |
 | Clonagem (docs) | `docs/clonagem/` |
 | Analisador CLI (opcional) | `scripts/analisador/` |
+| Backend local de stems | repositório `vibedj-stems` (HTTP em `127.0.0.1:8777`, cliente em `js/stems-backend.js`) |
 
 ## Clonagem musical — regras do projeto
 

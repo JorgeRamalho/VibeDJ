@@ -3,7 +3,8 @@ import { estimateMusicalKeyFromMono } from "./camelot-key.js";
 import { downloadBlob, encodeMp3Blob, encodeWavBlob } from "./export-audio.js";
 import { extractElementLayers } from "./extracao-elementos.js?v=4";
 import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
-import { isolationSummary, renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { isolationSummary, mergeStemImports, renderStemsPanelHtml, shortStemName } from "./isolamento-cadeiras.js";
+import { acompanharJob, baixarStems, checarBackend, enviarFaixa } from "./stems-backend.js?v=2";
 import { medirTonalidadeETextura } from "./leitura-audio-core.js";
 import { montarLeituraJson } from "./leitura-relatorio.js";
 import { bindStemsPanel } from "./stems-import.js";
@@ -45,6 +46,9 @@ function boot(root) {
     extractionBase: null,
     elementExtractPromise: null,
     wavBusy: false,
+    file: null,
+    backendArquivos: null,
+    separando: false,
   };
 
   root.innerHTML = renderShell();
@@ -101,6 +105,13 @@ function boot(root) {
   ui.baixarElementos.addEventListener("click", () => {
     void downloadAllElements();
   });
+  ui.separarBackend.addEventListener("click", () => {
+    void separarNoBackend();
+  });
+  void atualizarBackend();
+  setInterval(() => {
+    void atualizarBackend();
+  }, 5000);
   root.querySelectorAll("[data-layer]").forEach((button) => {
     button.addEventListener("click", () => playLayer(button.dataset.layer));
   });
@@ -114,6 +125,9 @@ function boot(root) {
     const mine = ++state.job;
     mountJob = mine;
     state.name = file.name;
+    state.file = file;
+    state.backendArquivos = null;
+    void atualizarBackend();
     halt();
     state.layers.clear();
     state.elementLayers = null;
@@ -526,6 +540,13 @@ function boot(root) {
           bpm: state.overview?.bpm,
           qualityMode: "fino",
         });
+        if (mine !== state.job) return;
+        const atuais = state.elementLayers;
+        if (atuais) {
+          CHAIRS.forEach((chair) => {
+            if (atuais[chair.id]?.source === "stem") layers[chair.id] = atuais[chair.id];
+          });
+        }
         state.elementLayers = layers;
         state.extractionBase = { ...layers };
         stemsLeitura.show();
@@ -564,6 +585,69 @@ function boot(root) {
     return Boolean(state.elementLayers && CHAIRS.some((chair) => state.elementLayers[chair.id]));
   }
 
+  async function atualizarBackend() {
+    const saude = await checarBackend();
+    const pronto = saude.status === "ready";
+    ui.separarBackend.disabled = !pronto || !state.file || state.separando;
+    const textos = {
+      ready: "Backend local: pronto.",
+      loading: `Backend local: ${saude.message || "carregando os modelos…"}`,
+      error: `Backend local: ${saude.message || "falha ao carregar os modelos."}`,
+      ausente: "Backend local: ausente. Abra o VibeDJ Stems. Se o navegador pedir acesso à rede local, aceite.",
+    };
+    ui.backendStatus.textContent = textos[saude.status] || textos.ausente;
+  }
+
+  async function separarNoBackend() {
+    if (!state.file || state.separando) return;
+    state.separando = true;
+    ui.separarBackend.disabled = true;
+    try {
+      say("Enviando a faixa ao backend local…");
+      const enviado = await enviarFaixa(state.file);
+      const job = await acompanharJob(enviado.id, (atual) => {
+        const pct = Math.round((atual.progress || 0) * 100);
+        const detalhe = atual.blocos ? ` (${atual.bloco} de ${atual.blocos})` : "";
+        say(`${atual.rotulo || "Separando"}… ${pct}%${detalhe}`);
+      });
+      if (job.state === "error") throw new Error(job.erro || "O backend não separou a faixa.");
+      const baixado = await baixarStems(job, ensureCtx(), say);
+      state.backendArquivos = baixado.arquivos;
+      if (!state.elementLayers) state.elementLayers = {};
+      if (!state.extractionBase && Object.keys(state.elementLayers).length) {
+        state.extractionBase = { ...state.elementLayers };
+      }
+      state.elementLayers = mergeStemImports(state.elementLayers, state.extractionBase, baixado.imports);
+      Object.entries(baixado.imports).forEach(([chairId, layer]) => {
+        const label = root.querySelector(`[data-stem-label-leitura-${chairId}]`);
+        if (label && layer.stemName) label.textContent = shortStemName(layer.stemName);
+      });
+      stemsLeitura.show();
+      paintInventario();
+      syncBaixarButton();
+      publishReport();
+      const summary = isolationSummary(state.elementLayers);
+      say(`${summary.stem} stem(s) do backend local · média ${summary.media_qualidade}%.`);
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Falha ao falar com o backend local.");
+    } finally {
+      state.separando = false;
+      void atualizarBackend();
+    }
+  }
+
+  async function baixarDoBackend() {
+    const arquivos = Object.values(state.backendArquivos);
+    const base = safeBase(state.name);
+    for (let index = 0; index < arquivos.length; index += 1) {
+      const item = arquivos[index];
+      const nome = item.cadeira ? `${base}_${item.cadeira}.wav` : `${base}_${item.arquivo.replace(/\.wav$/, "")}.wav`;
+      downloadBlob(item.blob, nome);
+      if (index < arquivos.length - 1) await wait(500);
+    }
+    say(`${arquivos.length} WAV(s) do backend local.`);
+  }
+
   async function downloadAllElements() {
     if (!state.buffer) {
       say("Abra um arquivo de áudio primeiro.");
@@ -574,6 +658,10 @@ function boot(root) {
     state.wavBusy = true;
     syncBaixarButton();
     try {
+      if (state.backendArquivos && Object.keys(state.backendArquivos).length) {
+        await baixarDoBackend();
+        return;
+      }
       const ok = await ensureElementLayersForExport();
       if (!ok) {
         say("Não foi possível separar os elementos para download.");
@@ -749,6 +837,7 @@ function renderShell() {
       <span>Solte um MP3, WAV, FLAC, OGG ou M4A. Ou clique para escolher. A leitura fica neste navegador.</span>
     </label>
     <p class="lab-status" data-status aria-live="polite">Nenhum arquivo aberto.</p>
+    <p class="lab-caption" data-backend-status>Backend local: verificando…</p>
     <div data-result hidden>
       <p data-filename></p>
       <div class="analise-facts">
@@ -796,6 +885,7 @@ function renderShell() {
           </select>
         </label>
         <button type="button" class="btn btn--ghost" data-baixar-elementos-track disabled>Baixar elementos da track</button>
+        <button type="button" class="btn btn--acid" data-separar-backend disabled>Separar no backend local</button>
       </div>
       <div class="layer-grid">${layers}</div>
       <p class="lab-caption">Centro e lados vêm do estéreo. Percussivo e harmônico separam ataque de nota. As faixas cortam o espectro. Nenhuma delas é o kick, o baixo ou o vocal isolados da sessão.</p>
@@ -839,6 +929,8 @@ function bind(root) {
     inventarioWrap: root.querySelector("[data-inventario-wrap]"),
     formato: root.querySelector("[data-formato-export]"),
     baixarElementos: root.querySelector("[data-baixar-elementos-track]"),
+    separarBackend: root.querySelector("[data-separar-backend]"),
+    backendStatus: root.querySelector("[data-backend-status]"),
   };
 }
 

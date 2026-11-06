@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/leitura-arquivo.test.js tests/stem-separa.test.js tests/extracao-elementos.test.js"
+    "test": "node --test tests/leitura-arquivo.test.js tests/stem-separa.test.js tests/extracao-elementos.test.js tests/stems-backend-wav.test.js"
   }
 }

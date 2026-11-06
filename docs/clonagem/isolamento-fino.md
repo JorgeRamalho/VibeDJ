@@ -6,7 +6,7 @@ Três níveis de qualidade no laboratório, do mais fraco ao mais forte:
 |-------|----------------|-----|
 | Filtro | `filtro` (~38%) | Fallback rápido por banda na mix |
 | Extração | `extracao` (~58–97%) | HPSS fino no browser (pulso de BPM, menos bleed kick↔baixo) |
-| Stem IA | `stem` (100%) | WAV de UVR/Demucs anexado ou pasta importada |
+| Stem IA | `stem` (100%) | WAV de UVR/Demucs anexado, pasta importada, ou o backend local VibeDJ Stems (`127.0.0.1:8777`) |
 
 Regra do projeto: estudar **arquitetura** (papéis, frase, mix), não copiar obra protegida.
 
@@ -17,6 +17,10 @@ Regra do projeto: estudar **arquitetura** (papéis, frase, mix), não copiar obr
 3. **Importar** — em **Isolamento fino — stems UVR / Demucs**, use **Importar pasta Demucs** ou anexe um WAV por cadeira.
 4. **JSON** — o campo `isolamento` resume quantas cadeiras estão em stem vs extração; `elementos_wav` indica `fonte` e `qualidade` por cadeira.
 5. **Mesa** — mesmo painel em cada doador; a montagem da track nova prioriza stem quando existir.
+
+## Backend local
+
+O repositório `vibedj-stems` sobe um HTTP em `127.0.0.1:8777` e fica na bandeja do Windows. Na Leitura, o botão **Separar no backend local** envia o arquivo aberto, acompanha o progresso e preenche as cadeiras com vocals, bass, other (stab), kick, snare (clap), cymbals (hat) e toms (perc). O stem `drums` entra só no download. O indicador avisa quando o backend está ausente e pede para aceitar o acesso à rede local, que o Chrome exige de um site publicado.
 
 ## Nomes de arquivo reconhecidos
 

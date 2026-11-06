@@ -248,9 +248,18 @@ function clamp01(value) {
   return Math.min(1, Math.max(0, value));
 }
 
-export async function decodeAudioFile(file, audioContext) {
-  if (file.size > MAX_BYTES) {
-    throw new Error(`Limite ${Math.round(MAX_BYTES / (1024 * 1024))} MB.`);
+/**
+ * Decodifica um arquivo de áudio do usuário.
+ * O teto padrão protege a leitura da mix. Quem já tem o arquivo em disco
+ * pode passar `maxBytes` maior.
+ * @param {File | Blob} file
+ * @param {AudioContext} audioContext
+ * @param {{ maxBytes?: number }} [opcoes]
+ */
+export async function decodeAudioFile(file, audioContext, opcoes = {}) {
+  const maxBytes = opcoes.maxBytes ?? MAX_BYTES;
+  if (file.size > maxBytes) {
+    throw new Error(`Limite ${Math.round(maxBytes / (1024 * 1024))} MB.`);
   }
   const bytes = await file.arrayBuffer();
   const buffer = await audioContext.decodeAudioData(bytes.slice(0));
