@@ -139,6 +139,53 @@
   font-size: 0.92rem;
 }
 
+.backend-andamento {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 14px;
+}
+
+.backend-andamento[hidden] { display: none; }
+
+.backend-andamento__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.backend-andamento__meta b { color: var(--acid); font-weight: 600; }
+.backend-andamento.is-done .backend-andamento__meta b { color: var(--copper); }
+.backend-andamento.is-error .backend-andamento__meta b { color: var(--danger); }
+
+.backend-andamento__trilho {
+  height: 10px;
+  border-radius: 99px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.backend-andamento__trilho span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--acid);
+  transition: width 0.25s linear;
+}
+
+.backend-andamento.is-done .backend-andamento__trilho span { background: var(--copper); }
+.backend-andamento.is-error .backend-andamento__trilho span { background: var(--danger); }
+
+.backend-andamento__etapa { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .backend-andamento__trilho span { transition: none; }
+}
+
 .lab-pattern {
   display: grid;
   gap: 6px;

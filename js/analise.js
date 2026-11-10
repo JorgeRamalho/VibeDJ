@@ -3,8 +3,8 @@ import { estimateMusicalKeyFromMono } from "./camelot-key.js";
 import { downloadBlob, encodeMp3Blob, encodeWavBlob } from "./export-audio.js";
 import { extractElementLayers } from "./extracao-elementos.js?v=4";
 import { buildElementInventory, leituraChecklist, renderInventarioCards } from "./inventario-elementos.js?v=2";
-import { isolationSummary, mergeStemImports, renderStemsPanelHtml, shortStemName } from "./isolamento-cadeiras.js";
-import { acompanharJob, baixarStems, checarBackend, enviarFaixa } from "./stems-backend.js?v=2";
+import { isolationSummary, renderStemsPanelHtml } from "./isolamento-cadeiras.js";
+import { acompanharJob, checarBackend, enviarFaixa } from "./stems-backend.js?v=4";
 import { medirTonalidadeETextura } from "./leitura-audio-core.js";
 import { montarLeituraJson } from "./leitura-relatorio.js";
 import { bindStemsPanel } from "./stems-import.js";
@@ -47,7 +47,6 @@ function boot(root) {
     elementExtractPromise: null,
     wavBusy: false,
     file: null,
-    backendArquivos: null,
     separando: false,
   };
 
@@ -126,7 +125,7 @@ function boot(root) {
     mountJob = mine;
     state.name = file.name;
     state.file = file;
-    state.backendArquivos = null;
+    limparAndamento();
     void atualizarBackend();
     halt();
     state.layers.clear();
@@ -569,6 +568,45 @@ function boot(root) {
     await state.elementExtractPromise;
   }
 
+  /**
+   * @param {{ tipo?: string, state?: string, stage?: string, rotulo?: string, progress?: number, bloco?: number, blocos?: number, destino?: string | null }} job
+   */
+  function pintarAndamento(job) {
+    const pct = Math.max(0, Math.min(100, Math.round((job.progress || 0) * 100)));
+    const concluido = job.tipo === "concluido" || job.state === "done";
+    const falha = job.tipo === "falha" || job.state === "error";
+    ui.andamento.hidden = false;
+    ui.andamento.classList.toggle("is-done", concluido);
+    ui.andamento.classList.toggle("is-error", falha);
+    ui.backendRotulo.textContent = concluido ? "Processamento concluído" : (job.rotulo || "Separando");
+    ui.backendPct.textContent = `${pct}%`;
+    ui.backendFill.style.width = `${pct}%`;
+    ui.backendTrilho.setAttribute("aria-valuenow", String(pct));
+    ui.backendTrilho.setAttribute("aria-busy", concluido || falha ? "false" : "true");
+    if (concluido) {
+      const onde = job.destino
+        ? `Os WAV foram gravados em ${job.destino}.`
+        : "A caixa de pasta foi cancelada.";
+      ui.backendEtapa.textContent = onde;
+      say(`Processamento concluído. ${onde}`);
+      return;
+    }
+    if (falha) ui.backendEtapa.textContent = "A separação parou no backend.";
+    else if (job.stage === "pasta") ui.backendEtapa.textContent = "Escolha a pasta na caixa do Windows.";
+    else if (job.blocos) ui.backendEtapa.textContent = `Bloco ${job.bloco} de ${job.blocos}.`;
+    else ui.backendEtapa.textContent = "Aguardando o backend.";
+    const detalhe = job.blocos ? ` (${job.bloco} de ${job.blocos})` : "";
+    say(`${ui.backendRotulo.textContent}… ${pct}%${detalhe}`);
+  }
+
+  function limparAndamento() {
+    ui.andamento.hidden = true;
+    ui.andamento.classList.remove("is-done", "is-error");
+    ui.backendFill.style.width = "0";
+    ui.backendTrilho.setAttribute("aria-valuenow", "0");
+    ui.backendTrilho.setAttribute("aria-busy", "false");
+  }
+
   function syncBaixarButton() {
     ui.baixarElementos.disabled = !state.buffer || state.wavBusy;
   }
@@ -604,48 +642,16 @@ function boot(root) {
     ui.separarBackend.disabled = true;
     try {
       say("Enviando a faixa ao backend local…");
+      pintarAndamento({ tipo: "andamento", state: "queued", rotulo: "Enviando a faixa", progress: 0, bloco: 0, blocos: 0 });
       const enviado = await enviarFaixa(state.file);
-      const job = await acompanharJob(enviado.id, (atual) => {
-        const pct = Math.round((atual.progress || 0) * 100);
-        const detalhe = atual.blocos ? ` (${atual.bloco} de ${atual.blocos})` : "";
-        say(`${atual.rotulo || "Separando"}… ${pct}%${detalhe}`);
-      });
-      if (job.state === "error") throw new Error(job.erro || "O backend não separou a faixa.");
-      const baixado = await baixarStems(job, ensureCtx(), say);
-      state.backendArquivos = baixado.arquivos;
-      if (!state.elementLayers) state.elementLayers = {};
-      if (!state.extractionBase && Object.keys(state.elementLayers).length) {
-        state.extractionBase = { ...state.elementLayers };
-      }
-      state.elementLayers = mergeStemImports(state.elementLayers, state.extractionBase, baixado.imports);
-      Object.entries(baixado.imports).forEach(([chairId, layer]) => {
-        const label = root.querySelector(`[data-stem-label-leitura-${chairId}]`);
-        if (label && layer.stemName) label.textContent = shortStemName(layer.stemName);
-      });
-      stemsLeitura.show();
-      paintInventario();
-      syncBaixarButton();
-      publishReport();
-      const summary = isolationSummary(state.elementLayers);
-      say(`${summary.stem} stem(s) do backend local · média ${summary.media_qualidade}%.`);
+      const job = await acompanharJob(enviado.id, pintarAndamento);
+      if (job.tipo === "falha" || job.state === "error") throw new Error(job.erro || "O backend não separou a faixa.");
     } catch (err) {
       say(err instanceof Error ? err.message : "Falha ao falar com o backend local.");
     } finally {
       state.separando = false;
       void atualizarBackend();
     }
-  }
-
-  async function baixarDoBackend() {
-    const arquivos = Object.values(state.backendArquivos);
-    const base = safeBase(state.name);
-    for (let index = 0; index < arquivos.length; index += 1) {
-      const item = arquivos[index];
-      const nome = item.cadeira ? `${base}_${item.cadeira}.wav` : `${base}_${item.arquivo.replace(/\.wav$/, "")}.wav`;
-      downloadBlob(item.blob, nome);
-      if (index < arquivos.length - 1) await wait(500);
-    }
-    say(`${arquivos.length} WAV(s) do backend local.`);
   }
 
   async function downloadAllElements() {
@@ -658,10 +664,6 @@ function boot(root) {
     state.wavBusy = true;
     syncBaixarButton();
     try {
-      if (state.backendArquivos && Object.keys(state.backendArquivos).length) {
-        await baixarDoBackend();
-        return;
-      }
       const ok = await ensureElementLayersForExport();
       if (!ok) {
         say("Não foi possível separar os elementos para download.");
@@ -887,6 +889,17 @@ function renderShell() {
         <button type="button" class="btn btn--ghost" data-baixar-elementos-track disabled>Baixar elementos da track</button>
         <button type="button" class="btn btn--acid" data-separar-backend disabled>Separar no backend local</button>
       </div>
+      <p class="lab-caption">O VibeDJ Stems grava os WAV na pasta escolhida na caixa do Windows. Esta página só acompanha o andamento.</p>
+      <div class="backend-andamento" data-backend-andamento hidden>
+        <div class="backend-andamento__meta">
+          <span data-backend-rotulo>Na fila</span>
+          <b data-backend-pct>0%</b>
+        </div>
+        <div class="backend-andamento__trilho" data-backend-trilho role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Andamento da separação no backend">
+          <span data-backend-fill></span>
+        </div>
+        <p class="lab-caption backend-andamento__etapa" data-backend-etapa>Aguardando o backend.</p>
+      </div>
       <div class="layer-grid">${layers}</div>
       <p class="lab-caption">Centro e lados vêm do estéreo. Percussivo e harmônico separam ataque de nota. As faixas cortam o espectro. Nenhuma delas é o kick, o baixo ou o vocal isolados da sessão.</p>
       <div data-inventario-wrap hidden></div>
@@ -931,6 +944,12 @@ function bind(root) {
     baixarElementos: root.querySelector("[data-baixar-elementos-track]"),
     separarBackend: root.querySelector("[data-separar-backend]"),
     backendStatus: root.querySelector("[data-backend-status]"),
+    andamento: root.querySelector("[data-backend-andamento]"),
+    backendRotulo: root.querySelector("[data-backend-rotulo]"),
+    backendPct: root.querySelector("[data-backend-pct]"),
+    backendTrilho: root.querySelector("[data-backend-trilho]"),
+    backendFill: root.querySelector("[data-backend-fill]"),
+    backendEtapa: root.querySelector("[data-backend-etapa]"),
   };
 }
 
